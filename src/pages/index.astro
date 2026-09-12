@@ -1,49 +1,73 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import LogoMark from "../components/LogoMark.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { formatPostDate, getBlogPosts, getPostHref } from "../lib/blog";
+
+const posts = await getBlogPosts();
+const latestPost = posts[0];
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+    <main id="main-content" class="home-main container">
+        <h1 class="hero-title">
+            <span class="hero-brand">
+                <LogoMark />
+                Cerulean
+            </span>{" "}
+            is a place for
+            <br class="desktop-break" /> curious minds to explore,
+            <br class="desktop-break" /> build, and discover.
+        </h1>
+        <div class="home-columns">
+            <section class="intro-copy" aria-label="About Cerulean">
+                <p>
+                    <span class="small-caps">We believe good things begin</span>{" "}
+                    with curiosity. A question worth asking. An idea worth
+                    trying. The possibility that something could work a little
+                    differently, or a whole lot better.
+                </p>
+                <p>
+                    Cerulean is a space for following those possibilities. We
+                    explore ideas, turn them into experiments, and build things
+                    that help us understand the world a little more clearly.
+                </p>
+                <p>
+                    Along the way, we’ll share what we’re thinking about, what
+                    we’re making, and what we’re learning. Consider this an open
+                    notebook. There’s plenty of sky ahead.
+                </p>
+                <div class="contact-block" id="contact">
+                    <p>
+                        Have a question or an idea to share?
+                        <br />
+                        We’d love to hear from you.
+                    </p>
+                    <a class="text-link" href="mailto:hi@cerulean.works">
+                        hi [at] cerulean.works <span aria-hidden="true">↗</span>
+                    </a>
+                </div>
+            </section>
+            {latestPost && (
+                <aside class="latest" aria-labelledby="latest-heading">
+                    <h2 id="latest-heading" class="eyebrow">
+                        The latest
+                    </h2>
+                    <a class="latest-link" href={getPostHref(latestPost)}>
+                        <h3>{latestPost.data.title}</h3>
+                        <p>{latestPost.data.description}</p>
+                        <time
+                            class="post-date"
+                            datetime={latestPost.data.pubDate.toISOString()}
+                        >
+                            {formatPostDate(latestPost.data.pubDate)}
+                        </time>
+                    </a>
+                    <a class="all-posts" href="/blog">
+                        All posts <span aria-hidden="true">→</span>
+                    </a>
+                </aside>
+            )}
+        </div>
+    </main>
+</BaseLayout>

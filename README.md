@@ -1,63 +1,56 @@
-# Astro Starter Kit: Blog
+# Cerulean website
+
+The Cerulean marketing site and blog, built with Astro and deployed as static assets on Cloudflare.
+
+## Development
 
 ```sh
-pnpm create astro@latest -- --template blog
+pnpm install
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Build the production site with:
 
-Features:
-
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
+```sh
+pnpm build
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Blog posts
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Posts live in `src/content/blog` as Markdown files. The filename becomes the URL slug, so
+`src/content/blog/a-place-to-begin.md` is published at `/blog/a-place-to-begin`.
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+Add the card image under `public/images/blog_thumbnails`, then reference its public URL in the
+post frontmatter:
 
-Any static assets, like images, can be placed in the `public/` directory.
+```md
+---
+title: "Post title"
+description: "A short summary used in listings and search metadata."
+pubDate: "2026-09-13"
+updatedDate: "2026-09-20" # optional
+author: "Cerulean" # optional; defaults to Cerulean
+readingTime: "4 min read" # optional; calculated from the Markdown when omitted
+deck: "An optional subtitle shown on the article page."
+draft: false # optional; drafts are only included during local development
+thumbnail:
+    src: "/images/blog_thumbnails/post-slug.jpg"
+    alt: "" # use empty text for decorative art, or describe an informative image
+    title: |-
+        Optional words
+        over the image.
+---
 
-## 🧞 Commands
+Write the post here in Markdown.
+```
 
-All commands are run from the root of the project, from a terminal:
+`src/content.config.ts` validates every post. `src/lib/blog.ts` is the shared source for draft
+filtering, newest-first sorting, URLs, dates, and reading time. The homepage, blog index, generated
+article routes, social metadata, and RSS feed all consume that same collection, so no route or
+listing code needs to be changed when a post is added.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+## Deployment
 
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+```sh
+pnpm deploy
+```
