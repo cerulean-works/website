@@ -1,0 +1,44 @@
+---
+import LogoMark from "../../components/LogoMark.astro";
+import PostThumbnail from "../../components/PostThumbnail.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { formatPostDate, getBlogPosts, getPostHref } from "../../lib/blog";
+
+const posts = await getBlogPosts();
+---
+
+<BaseLayout
+    title="Blog — Cerulean"
+    description="Notes, ideas, and things we’re learning at Cerulean."
+    bodyClass="blog-page blog-index"
+>
+    <main id="main-content" class="blog-main container">
+        <h1 class="sr-only">Cerulean blog</h1>
+        <div class="post-list">
+            {posts.map((post, index) => (
+                <a href={getPostHref(post)} class="post-row">
+                    <PostThumbnail
+                        title={post.data.title}
+                        thumbnail={post.data.thumbnail}
+                        loading={index === 0 ? "eager" : "lazy"}
+                    />
+                    <div class="post-summary">
+                        <h2>{post.data.title}</h2>
+                        <p>{post.data.description}</p>
+                        <div class="post-byline">
+                            <LogoMark />
+                            <span>
+                                {post.data.author}, on{" "}
+                                <time
+                                    datetime={post.data.pubDate.toISOString()}
+                                >
+                                    {formatPostDate(post.data.pubDate)}
+                                </time>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            ))}
+        </div>
+    </main>
+</BaseLayout>

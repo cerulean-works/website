@@ -1,0 +1,26 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+type Thumbnail = CollectionEntry<"blog">["data"]["thumbnail"];
+
+interface Props {
+    title: string;
+    thumbnail: Thumbnail;
+    loading?: "eager" | "lazy";
+}
+
+const { title, thumbnail, loading = "lazy" } = Astro.props;
+---
+
+<div class="post-thumbnail">
+    <img
+        class="post-thumbnail-image"
+        src={thumbnail.src}
+        alt={thumbnail.alt}
+        loading={loading}
+        decoding="async"
+    />
+    <div class="post-thumbnail-title" aria-hidden="true">
+        {thumbnail.title ?? title}
+    </div>
+</div>

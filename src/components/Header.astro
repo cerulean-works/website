@@ -1,0 +1,20 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+import LogoMark from "./LogoMark.astro";
+
+const isBlog =
+    Astro.url.pathname === "/blog" || Astro.url.pathname.startsWith("/blog/");
+---
+
+<header class="site-header container">
+    <a class="wordmark" href="/" aria-label="Cerulean home">
+        <LogoMark />
+        <span>Cerulean</span>
+    </a>
+    <nav aria-label="Main navigation">
+        <a href="/blog" class:list={{ active: isBlog }}>
+            Blog
+        </a>
+    </nav>
+    <ThemeToggle />
+</header>

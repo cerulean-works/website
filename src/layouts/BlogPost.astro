@@ -1,0 +1,61 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatPostDate } from "../lib/blog";
+import BaseLayout from "./BaseLayout.astro";
+
+type Props = CollectionEntry<"blog">["data"] & {
+    readingTime: string;
+};
+
+const {
+    title,
+    description,
+    pubDate,
+    updatedDate,
+    author,
+    readingTime,
+    deck,
+    thumbnail,
+} = Astro.props;
+const displayDate = formatPostDate(pubDate);
+---
+
+<BaseLayout
+    title={`${title} — Cerulean`}
+    description={description}
+    image={thumbnail.src}
+    bodyClass="blog-page"
+>
+    <main id="main-content" class="article-main container">
+        <a class="back-link" href="/blog">
+            <span aria-hidden="true">←</span> All posts
+        </a>
+        <article>
+            <header class="article-header">
+                <h1 class="page-title">{title}</h1>
+                {deck && <p class="article-deck">{deck}</p>}
+                <div class="article-meta">
+                    <span>{author}</span>
+                    <span aria-hidden="true">·</span>
+                    <time datetime={pubDate.toISOString()}>{displayDate}</time>
+                    <span aria-hidden="true">·</span>
+                    <span>{readingTime}</span>
+                    {updatedDate && (
+                        <>
+                            <span aria-hidden="true">·</span>
+                            <span>
+                                Updated{" "}
+                                <time datetime={updatedDate.toISOString()}>
+                                    {formatPostDate(updatedDate)}
+                                </time>
+                            </span>
+                        </>
+                    )}
+                </div>
+            </header>
+            <div class="article-body">
+                <slot />
+            </div>
+        </article>
+    </main>
+</BaseLayout>
