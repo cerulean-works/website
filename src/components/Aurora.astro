@@ -1,0 +1,125 @@
+---
+// Fixed seed keeps the curtains identical across builds and page loads.
+let seed = 7319;
+const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+};
+const curtains = [
+    { start: -100, span: 1800, count: 400, level: 235, strength: 1 },
+    { start: 850, span: 1050, count: 190, level: 300, strength: 0.3 },
+].map((curtain, layer) => {
+    let wandering = 0;
+    let softness = 0.5;
+    return Array.from({ length: curtain.count }, (_, i) => {
+        const t = i / curtain.count;
+        const x = curtain.start + t * curtain.span;
+        wandering = wandering * 0.97 + (random() - 0.5) * 1.4;
+        softness = softness * 0.9 + random() * 0.1;
+        // Long, shared folds carry a faint strand texture instead of jagged tips.
+        const fold =
+            Math.sin(t * 7.5 + layer * 1.8) * 64 +
+            Math.sin(t * 14 + 0.8) * 12 +
+            wandering;
+        const bottom = curtain.level + fold + t * 65;
+        const height = 260 + Math.sin(t * 5 + 0.4) * 65 + softness * 25;
+        const lean = 25 + Math.sin(t * 6 + layer) * 48;
+        const brightness =
+            (0.18 + softness * 0.13) *
+            (0.55 + Math.pow(Math.sin(t * 5 + 0.8), 2) * 0.45) *
+            curtain.strength;
+        return {
+            d: `M${x - lean} ${bottom - height} C${x - lean * 0.7} ${bottom - height * 0.56} ${x + 6} ${bottom - 45} ${x} ${bottom}`,
+            opacity: brightness.toFixed(3),
+            width: (3.5 + random() * 2).toFixed(2),
+        };
+    });
+});
+const stars = Array.from({ length: 35 }, () => ({
+    x: random() * 1600,
+    y: random() * 490,
+    radius: 0.35 + random() * 0.65,
+    opacity: 0.08 + random() * 0.17,
+}));
+---
+
+<div class="aurora" aria-hidden="true">
+    <svg
+        viewBox="0 0 1600 850"
+        preserveAspectRatio="xMidYMin slice"
+        fill="none"
+    >
+        <defs>
+            <linearGradient id="aurora-ray" x1="0" y1="0" x2="0" y2="1">
+                <stop stop-color="#0754b5" stop-opacity="0" />
+                <stop offset=".3" stop-color="#176dd1" stop-opacity=".2" />
+                <stop offset=".65" stop-color="#479aeb" stop-opacity=".65" />
+                <stop offset=".85" stop-color="#9bcafa" />
+                <stop offset="1" stop-color="#438dde" stop-opacity="0" />
+            </linearGradient>
+            <filter
+                id="aurora-atmosphere"
+                x="-20%"
+                y="-50%"
+                width="140%"
+                height="200%"
+            >
+                <feGaussianBlur stdDeviation="28" />
+                <feComponentTransfer>
+                    <feFuncA type="linear" slope="2.8" />
+                </feComponentTransfer>
+            </filter>
+            <filter
+                id="aurora-bloom"
+                x="-30%"
+                y="-80%"
+                width="160%"
+                height="260%"
+            >
+                <feGaussianBlur stdDeviation="65" />
+                <feComponentTransfer>
+                    <feFuncA type="linear" slope="1.8" />
+                </feComponentTransfer>
+            </filter>
+            <filter
+                id="aurora-filaments"
+                x="-20%"
+                y="-50%"
+                width="140%"
+                height="200%"
+            >
+                <feGaussianBlur stdDeviation="1.6" />
+            </filter>
+            <g id="aurora-curtains" stroke="url(#aurora-ray)">
+                {curtains.flat().map((ray) => (
+                    <path
+                        d={ray.d}
+                        stroke-width={ray.width}
+                        opacity={ray.opacity}
+                    />
+                ))}
+            </g>
+        </defs>
+        <g fill="#c4dcfc">
+            {stars.map((star) => (
+                <circle
+                    cx={star.x}
+                    cy={star.y}
+                    r={star.radius}
+                    opacity={star.opacity}
+                />
+            ))}
+        </g>
+        <use href="#aurora-curtains" filter="url(#aurora-bloom)" />
+        <use
+            href="#aurora-curtains"
+            filter="url(#aurora-atmosphere)"
+            opacity="1"
+        />
+        <use
+            href="#aurora-curtains"
+            filter="url(#aurora-filaments)"
+            opacity=".7"
+        />
+    </svg>
+</div>

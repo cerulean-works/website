@@ -1,4 +1,5 @@
 ---
+import Aurora from "../components/Aurora.astro";
 import LogoMark from "../components/LogoMark.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import BaseLayout from "../layouts/BaseLayout.astro";
@@ -8,7 +9,12 @@ const posts = await getBlogPosts();
 const latestPost = posts[0];
 ---
 
-<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+<BaseLayout
+    title={SITE_TITLE}
+    description={SITE_DESCRIPTION}
+    bodyClass="home-page"
+>
+    <Aurora />
     <main id="main-content" class="home-main container">
         <h1 class="hero-title">
             <span class="hero-brand">

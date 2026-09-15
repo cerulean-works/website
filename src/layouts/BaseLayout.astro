@@ -2,6 +2,7 @@
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import "../styles/theme.css";
 
 interface Props {
     title: string;
@@ -14,11 +15,23 @@ const { title, description, image, bodyClass } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark-theme">
     <head>
         <BaseHead title={title} description={description} image={image} />
+        <script is:inline>
+            // Restore the theme before the page paints, avoiding a light flash.
+            try {
+                const theme = localStorage.getItem("cerulean-theme");
+                document.documentElement.classList.toggle(
+                    "dark-theme",
+                    theme !== "light"
+                );
+            } catch {
+                // Keep the default dark theme when storage is unavailable.
+            }
+        </script>
     </head>
-    <body class={bodyClass}>
+    <body class:list={["site-theme", bodyClass]}>
         <a class="skip-link" href="#main-content">
             Skip to content
         </a>
