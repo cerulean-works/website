@@ -1,7 +1,50 @@
----
-const today = new Date();
----
-
-<footer class="site-footer container">
-    <span>© {today.getFullYear()} Cerulean</span>
+<footer class="site-footer" id="contact">
+    <div class="site-footer-inner container">
+        <div class="footer-contact">
+            <h2>Contact</h2>
+            <a class="footer-email" href="mailto:hi@cerulean.works">
+                hi@cerulean.works
+            </a>
+        </div>
+        <nav class="footer-socials" aria-label="Social links">
+            <a
+                href="https://github.com/cerulean-works/"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                GitHub <span aria-hidden="true">↗</span>
+            </a>
+            <a
+                href="https://huggingface.co/cerulean-works"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Hugging Face <span aria-hidden="true">↗</span>
+            </a>
+        </nav>
+    </div>
+    <div class="footer-legal container">
+        <p>Copyright © {new Date().getFullYear()} Cerulean Labs</p>
+        <!-- Credits the hero photograph shown by the current theme. -->
+        <p class="footer-credits footer-credits-day">
+            Hero Section Photo by Vincenzo Di Giorgi on{" "}
+            <a
+                href="https://unsplash.com/photos/Ioy3OB0U5cI"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Unsplash
+            </a>
+        </p>
+        <p class="footer-credits footer-credits-night">
+            Hero Section Photo by Condor Wei on{" "}
+            <a
+                href="https://unsplash.com/photos/oMcTmNHclZI"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Unsplash
+            </a>
+        </p>
+    </div>
 </footer>

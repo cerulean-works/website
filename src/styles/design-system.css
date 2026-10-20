@@ -1,0 +1,81 @@
+/* Shared Cerulean primitives. Page compositions live in home.css or blog.css. */
+:root {
+    --c-paper: #fcfbf6;
+    --c-ink: #172a50;
+    --c-muted: #4b5d79;
+    --c-deep: #102c60;
+    --c-footer: var(--c-deep);
+    --c-footer-rule: transparent;
+    --c-on-sky: #fffdf4;
+    --c-link: #145a9a;
+    --c-focus: #1768af;
+    --c-rule: #cdd3db;
+    --c-selection: #cce7fb;
+    --font-editorial: "Host Grotesk", Arial, sans-serif;
+    --font-ui: "Host Grotesk", Arial, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    --c-gutter: 64px;
+    --c-page-max: 1280px;
+    --c-reading-max: 780px;
+    --c-header-height: 80px;
+    --c-section-space: 88px;
+    --c-grid-gap: 27px;
+    --c-motion-duration: 220ms;
+    --c-body-size: 25px;
+    --c-body-leading: 1.5;
+}
+
+.container {
+    width: min(calc(100% - 2 * var(--c-gutter)), var(--c-page-max));
+    margin-inline: auto;
+}
+
+.reading-column {
+    width: min(calc(100% - 2 * var(--c-gutter)), var(--c-reading-max));
+    margin-inline: auto;
+}
+
+.editorial-heading {
+    font-family: var(--font-editorial);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+}
+
+.artwork-square {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--c-deep);
+}
+
+.text-link {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+@media (max-width: 800px) {
+    :root {
+        --c-gutter: 36px;
+        --c-section-space: 72px;
+        --c-grid-gap: 22px;
+        --c-body-size: 24px;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --c-gutter: 26px;
+        --c-header-height: 72px;
+        --c-section-space: 65px;
+        --c-body-size: 23px;
+    }
+}
+
+@media (max-width: 350px) {
+    :root {
+        --c-gutter: 22px;
+    }
+}

@@ -1,26 +1,27 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { resolve } from "node:path";
+import sharp from "sharp";
 
 type Thumbnail = CollectionEntry<"blog">["data"]["thumbnail"];
 
 interface Props {
-    title: string;
     thumbnail: Thumbnail;
     loading?: "eager" | "lazy";
 }
 
-const { title, thumbnail, loading = "lazy" } = Astro.props;
+const { thumbnail, loading = "lazy" } = Astro.props;
+const { width, height } = await sharp(
+    resolve("public", `.${thumbnail.src}`)
+).metadata();
 ---
 
-<div class="post-thumbnail">
-    <img
-        class="post-thumbnail-image"
-        src={thumbnail.src}
-        alt={thumbnail.alt}
-        loading={loading}
-        decoding="async"
-    />
-    <div class="post-thumbnail-title" aria-hidden="true">
-        {thumbnail.title ?? title}
-    </div>
-</div>
+<img
+    class="post-thumbnail artwork-square"
+    src={thumbnail.src}
+    alt={thumbnail.alt}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding="async"
+/>

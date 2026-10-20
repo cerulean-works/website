@@ -1,0 +1,94 @@
+---
+interface Props {
+    title: string;
+    description?: string;
+    image: string;
+    imageAlt: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    href?: string;
+    imagePosition?: string;
+}
+
+const {
+    title,
+    description,
+    image,
+    imageAlt,
+    imageWidth = 1000,
+    imageHeight = 1000,
+    href,
+    imagePosition = "center",
+} = Astro.props;
+const Wrapper = href ? "a" : "div";
+---
+
+<article class="work-card">
+    <Wrapper class="work-card-content" href={href}>
+        <img
+            class="artwork-square"
+            src={image}
+            alt={imageAlt}
+            width={imageWidth}
+            height={imageHeight}
+            loading="lazy"
+            decoding="async"
+            style={{ objectPosition: imagePosition }}
+        />
+        <h3>
+            {title}
+            {href && <span aria-hidden="true"> ↗</span>}
+        </h3>
+        {description && <p>{description}</p>}
+    </Wrapper>
+</article>
+
+<style>
+    .work-card {
+        min-width: 0;
+    }
+
+    .work-card-content {
+        display: block;
+    }
+
+    .work-card h3 {
+        margin-top: 25px;
+        font: 400 clamp(24px, 2.65vw, 34px) / 1.1 var(--font-editorial);
+        letter-spacing: -0.75px;
+    }
+
+    .work-card h3 span {
+        font: 400 0.74em/1 var(--font-ui);
+        white-space: nowrap;
+        margin-left: 2px;
+    }
+
+    .work-card p {
+        max-width: 310px;
+        margin-top: 12px;
+        font: 400 17px/1.45 var(--font-ui);
+        color: var(--c-muted);
+    }
+
+    @media (max-width: 800px) {
+        .work-card h3 {
+            font-size: 27px;
+        }
+        .work-card p {
+            font-size: 16px;
+        }
+    }
+    @media (max-width: 600px) {
+        .work-card h3 {
+            margin-top: 19px;
+            font-size: 32px;
+            letter-spacing: -0.7px;
+        }
+        .work-card p {
+            max-width: none;
+            margin-top: 9px;
+            font-size: 18px;
+        }
+    }
+</style>

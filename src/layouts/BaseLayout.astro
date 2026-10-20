@@ -2,6 +2,8 @@
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import "../styles/design-system.css";
+import "../styles/global.css";
 import "../styles/theme.css";
 
 interface Props {
@@ -9,9 +11,16 @@ interface Props {
     description: string;
     image?: string;
     bodyClass?: string;
+    headerMode?: "always" | "after-hero";
 }
 
-const { title, description, image, bodyClass } = Astro.props;
+const {
+    title,
+    description,
+    image,
+    bodyClass,
+    headerMode = "always",
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -19,7 +28,8 @@ const { title, description, image, bodyClass } = Astro.props;
     <head>
         <BaseHead title={title} description={description} image={image} />
         <script is:inline>
-            // Restore the theme before the page paints, avoiding a light flash.
+            document.documentElement.classList.add("js");
+            // Restore the theme before paint. Unset or unavailable storage is dark.
             try {
                 const theme = localStorage.getItem("cerulean-theme");
                 document.documentElement.classList.toggle(
@@ -27,19 +37,58 @@ const { title, description, image, bodyClass } = Astro.props;
                     theme !== "light"
                 );
             } catch {
-                // Keep the default dark theme when storage is unavailable.
+                // The explicit theme control still works without storage.
             }
         </script>
+        <slot name="head" />
     </head>
     <body class:list={["site-theme", bodyClass]}>
         <a class="skip-link" href="#main-content">
             Skip to content
         </a>
-        <div class="sky" aria-hidden="true"></div>
-        <div class="site-header-wrap">
+        <div class="site-header-wrap" data-header-mode={headerMode}>
             <Header />
         </div>
         <slot />
         <Footer />
     </body>
 </html>
+
+<script>
+    const header = document.querySelector<HTMLElement>(
+        '[data-header-mode="after-hero"]'
+    );
+    const hero = document.querySelector<HTMLElement>("[data-home-hero]");
+
+    if (header && hero) {
+        const revealedLinks = header.querySelectorAll<HTMLElement>(
+            "[data-header-reveal]"
+        );
+        let framePending = false;
+        const syncHeader = () => {
+            const visible = hero.getBoundingClientRect().bottom <= 0;
+            header.classList.toggle("is-visible", visible);
+            revealedLinks.forEach((link) => {
+                link.inert = !visible;
+                link.setAttribute("aria-hidden", String(!visible));
+            });
+            framePending = false;
+        };
+        const requestSync = () => {
+            if (!framePending) {
+                framePending = true;
+                requestAnimationFrame(syncHeader);
+            }
+        };
+        new IntersectionObserver(requestSync, { threshold: [0, 1] }).observe(
+            hero
+        );
+        window.addEventListener("scroll", requestSync, { passive: true });
+        window.addEventListener("resize", requestSync, { passive: true });
+        window.addEventListener("pageshow", requestSync);
+        syncHeader();
+    } else if (header) {
+        // A missing hero must not leave the site's navigation inaccessible.
+        header.classList.add("is-visible");
+    }
+</script>

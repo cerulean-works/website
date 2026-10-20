@@ -1,279 +1,52 @@
-.site-theme {
-    min-height: 100svh;
-    background-color: #fff;
-    color: #25292d;
-    transition:
-        background-color 400ms ease,
-        color 400ms ease;
+/* Theme ownership stays at the token level: components use the same colors. */
+:root {
+    color-scheme: light;
 }
-.site-theme
-    :is(
-        .hero-title,
-        .intro-copy,
-        .small-caps,
-        .eyebrow,
-        .latest p,
-        .post-date,
-        .site-footer
-    ) {
-    transition:
-        color 400ms ease,
-        border-color 400ms ease;
+
+:root.dark-theme {
+    color-scheme: dark;
+    --c-paper: #10254b;
+    --c-ink: #f4f2e9;
+    --c-muted: #c1cbe0;
+    --c-deep: #0c2048;
+    /* The page is already navy, so the footer continues it behind a rule. */
+    --c-footer: var(--c-paper);
+    --c-footer-rule: var(--c-rule);
+    --c-link: #a8d4ff;
+    --c-focus: #a8d4ff;
+    --c-rule: #415577;
+    --c-selection: #235fa2;
 }
-/* Only color owners animate; descendants inherit the same in-flight color. */
-.site-theme :is(.hero-title, .intro-copy, .small-caps) {
-    color: #25292d;
-}
-.site-theme :is(.contact-block, .latest) {
-    transition: border-color 400ms ease;
-}
-.site-theme a,
-.site-theme h3,
-.site-theme .site-header nav a {
-    transition: none;
-}
-.site-theme .sky {
-    /* Fade the image into the shared page color, without a second white layer. */
-    background-image: url("/images/cerulean-sky.jpg");
-    background-position: center 44%;
-    mask-image: linear-gradient(
-        to bottom,
-        rgb(0 0 0 / 84%) 0%,
-        rgb(0 0 0 / 70%) 30%,
-        transparent 100%
-    );
-    opacity: 1;
-    transition: opacity 400ms ease;
-}
+
 .theme-preview {
-    margin-left: auto;
     display: grid;
     place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
+    flex: none;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: #25292d;
+    color: inherit;
     cursor: pointer;
-    transition:
-        background-color 200ms ease,
-        color 400ms ease;
 }
+
 .theme-preview svg {
     grid-area: 1 / 1;
-    width: 1.25rem;
-    height: 1.25rem;
-    transition:
-        opacity 250ms ease,
-        transform 400ms ease;
+    width: 20px;
+    height: 20px;
 }
-.theme-sun {
-    opacity: 0;
-    transform: rotate(-60deg) scale(0.65);
-}
-.theme-moon {
-    opacity: 1;
-    transform: rotate(0) scale(1);
-}
-.dark-theme .theme-sun {
-    opacity: 1;
-    transform: rotate(0) scale(1);
-}
+
+.theme-sun,
 .dark-theme .theme-moon {
-    opacity: 0;
-    transform: rotate(60deg) scale(0.65);
+    display: none;
 }
+
+.dark-theme .theme-sun {
+    display: block;
+}
+
 .theme-preview:hover {
-    background: rgb(127 157 196 / 16%);
-}
-.theme-preview:focus-visible {
-    outline: 0.125rem solid #409bed;
-    outline-offset: 0.25rem;
-}
-.aurora {
-    opacity: 0;
-    transition: opacity 400ms ease;
-    background: radial-gradient(ellipse at 65% 0%, #091a30 0%, transparent 65%);
-    position: absolute;
-    inset: 0 0 auto;
-    height: 48rem;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-    mask-image: linear-gradient(#000 0%, #000 40%, transparent 100%);
-}
-.aurora svg {
-    width: 100%;
-    height: 100%;
-    opacity: 1;
-}
-.dark-theme {
-    color-scheme: dark;
-    background-color: #030b19;
-}
-.dark-theme .site-theme {
-    background-color: #030b19;
-    color: #e9eff8;
-}
-.dark-theme .sky {
-    opacity: 0;
-}
-.dark-theme .aurora {
-    opacity: 1;
-}
-.dark-theme .hero-title {
-    color: #f2f6ff;
-}
-.dark-theme .intro-copy {
-    color: #becbdd;
-}
-.dark-theme .small-caps {
-    color: #e0e9f7;
-}
-.dark-theme .eyebrow,
-.dark-theme .latest p,
-.dark-theme .post-date,
-.dark-theme .site-footer {
-    color: #95a7bf;
-}
-.dark-theme .contact-block,
-.dark-theme .site-footer,
-.dark-theme .latest {
-    border-color: #213047;
-}
-.dark-theme .theme-preview {
-    color: #cedcf0;
-}
-.dark-theme .theme-preview:hover {
-    background: rgb(127 157 196 / 16%);
-}
-.dark-theme a:hover {
-    color: #8ec3ff;
-}
-.dark-theme a:focus-visible {
-    outline-color: #8ec3ff;
-}
-.dark-theme .latest-link:hover h3 {
-    color: #8ec3ff;
-}
-.dark-theme .skip-link {
-    background: #102440;
-}
-.dark-theme ::selection {
-    background: #235fa2;
-    color: #fff;
-}
-.dark-theme .sky-signature {
-    color: #8bbafa;
-}
-@supports (background-clip: text) or (-webkit-background-clip: text) {
-    .dark-theme .sky-signature {
-        background-image: linear-gradient(to right, #679ce7, #b0d4fc);
-        color: transparent;
-    }
-}
-@media (max-width: 43.75rem) {
-    .site-theme .sky {
-        background-position: 55% center;
-    }
-    .site-theme .site-header {
-        gap: 1rem;
-    }
-    .aurora {
-        height: 38rem;
-    }
-    .aurora svg {
-        width: 200%;
-        max-width: none;
-        margin-left: -80%;
-        opacity: 0.6;
-    }
-}
-@media (forced-colors: active) {
-    .dark-theme .sky-signature {
-        background: none;
-        color: CanvasText;
-    }
-    .site-theme .aurora {
-        display: none;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .site-theme,
-    .site-theme *,
-    .site-theme *::before,
-    .site-theme *::after {
-        transition: none !important;
-    }
-}
-
-/* Blog surfaces share the palette while keeping the reading area quiet. */
-.site-theme
-    :is(
-        .post-row p,
-        .post-byline,
-        .page-description,
-        .article-deck,
-        .article-meta,
-        .article-body,
-        .article-body h2,
-        .article-body blockquote,
-        .back-link
-    ) {
-    transition:
-        color 400ms ease,
-        border-color 400ms ease;
-}
-.site-theme .article-body,
-.site-theme .article-body h2 {
-    color: #25292d;
-}
-.site-theme .site-header-wrap {
-    transition: border-color 400ms ease;
-}
-.site-theme .site-header nav a.active {
-    transition:
-        color 400ms ease,
-        background-color 400ms ease;
-}
-.dark-theme
-    :is(
-        .post-row p,
-        .post-byline,
-        .page-description,
-        .article-deck,
-        .article-meta,
-        .back-link
-    ) {
-    color: #a5b5ca;
-}
-.dark-theme .article-body {
-    color: #c4cfdf;
-}
-.dark-theme .article-body h2 {
-    color: #e9eff8;
-}
-.dark-theme .article-body blockquote {
-    color: #b2cfee;
-    border-color: #4b7aa9;
-}
-.dark-theme .article-body a {
-    text-decoration-color: #648db6;
-}
-.dark-theme .blog-index .site-header-wrap {
-    border-color: #213047;
-}
-.dark-theme .site-header nav a.active {
-    color: #b8d8ff;
-}
-.dark-theme .blog-index .site-header nav a.active {
-    background-color: #15263e;
-}
-.dark-theme .post-row:hover h2,
-.dark-theme .back-link:hover,
-.dark-theme .article-body a:hover {
-    color: #8ec3ff;
+    background: color-mix(in srgb, currentColor 8%, transparent);
 }

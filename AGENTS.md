@@ -10,6 +10,8 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 
 ## Documentation
 
+For visual work, read [the Cerulean style reference](docs/design-system.md) for the identity across digital, presentation, document, and print formats: Host Grotesk as the single typeface, real sky photography, and the color tokens. For website changes, also read its [Website Adapter](docs/design-system.md#website-adapter) section and reuse the shared components and tokens it points to. Keep the style reference in sync when the visual style, approved photographs, or website behavior changes, including the imagery table's photographer and source for each photo.
+
 Full documentation: https://docs.astro.build
 
 Consult these guides before working on related tasks:

@@ -1,42 +1,56 @@
 ---
-import Aurora from "../components/Aurora.astro";
-import LogoMark from "../components/LogoMark.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { formatPostDate, getBlogPosts, getPostHref } from "../lib/blog";
-
-const posts = await getBlogPosts();
-const latestPost = posts[0];
+import LogoMark from "../components/LogoMark.astro";
+import WorkCard from "../components/WorkCard.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import "../styles/home.css";
 ---
 
 <BaseLayout
     title={SITE_TITLE}
     description={SITE_DESCRIPTION}
+    image="/images/blog_thumbnails/hero-day.webp"
     bodyClass="home-page"
+    headerMode="after-hero"
 >
-    <Aurora />
-    <main id="main-content" class="home-main container">
-        <h1 class="hero-title">
-            <span class="hero-brand">
-                <LogoMark />
-                Cerulean
-            </span>{" "}
-            is a lab for
-            <br class="desktop-break" /> breaking down barriers and
-            <br class="desktop-break" /> democratizing AI exploration.
-        </h1>
-        <div class="home-columns">
-            <section class="intro-copy" aria-label="About Cerulean">
+    <main id="main-content">
+        <section class="home-hero" data-home-hero aria-label="Our mission">
+            <!-- The theme is chosen before paint; CSS shows the matching sky. -->
+            <img
+                class="home-hero-image home-hero-image-day"
+                src="/images/blog_thumbnails/hero-day.webp"
+                alt=""
+                width="3000"
+                height="2000"
+                loading="eager"
+            />
+            <img
+                class="home-hero-image home-hero-image-night"
+                src="/images/blog_thumbnails/hero-night.webp"
+                alt=""
+                width="3000"
+                height="2000"
+                fetchpriority="high"
+                loading="eager"
+            />
+            <h1>
+                <span class="mission-line">
+                    <LogoMark /> Cerulean is a lab for
+                </span>
+                <span class="mission-line">breaking down barriers and</span>
+                <span class="mission-line">democratizing AI exploration.</span>
+            </h1>
+        </section>
+
+        <div class="home-body">
+            <section class="home-mission" aria-label="About Cerulean">
                 <p>
-                    <span class="small-caps">
-                        We believe in science for everyone,
-                    </span>{" "}
-                    not just the best-funded labs. Maintaining a free and
-                    diverse AI landscape requires enabling research for people
-                    from all different backgrounds. AI research should be
-                    possible before university. AI research should be accessible
-                    to community tool-builders. AI research cannot afford to
-                    lose ideas to computing costs.
+                    We believe in science for everyone, not just the best-funded
+                    labs. Maintaining a free and diverse AI landscape requires
+                    enabling research for people from all different backgrounds.
+                    AI research should be possible before university. AI
+                    research should be accessible to community tool-builders. AI
+                    research cannot afford to lose ideas to computing costs.
                 </p>
                 <p>
                     Cerulean is a student-led research lab that aims to reduce
@@ -49,41 +63,44 @@ const latestPost = posts[0];
                     efficiency in public so others can build on it.
                 </p>
                 <p>
-                    We envision a world where <i>anyone</i> can experiment to
-                    their heart's content. In that world,{" "}
-                    <span class="sky-signature">sky's the limit.</span>
+                    We envision a world where anyone can experiment to their
+                    heart's content. In that world, sky's the limit.
                 </p>
-                <div class="contact-block" id="contact">
-                    <p>
-                        Have a question or an idea to share?
-                        <br />
-                        We’d love to hear from you.
-                    </p>
-                    <a class="text-link" href="mailto:hi@cerulean.works">
-                        hi [at] cerulean.works <span aria-hidden="true">↗</span>
-                    </a>
-                </div>
             </section>
-            {latestPost && (
-                <aside class="latest" aria-labelledby="latest-heading">
-                    <h2 id="latest-heading" class="eyebrow">
-                        The latest
-                    </h2>
-                    <a class="latest-link" href={getPostHref(latestPost)}>
-                        <h3>{latestPost.data.title}</h3>
-                        <p>{latestPost.data.description}</p>
-                        <time
-                            class="post-date"
-                            datetime={latestPost.data.pubDate.toISOString()}
-                        >
-                            {formatPostDate(latestPost.data.pubDate)}
-                        </time>
-                    </a>
-                    <a class="all-posts" href="/blog">
-                        All posts <span aria-hidden="true">→</span>
-                    </a>
-                </aside>
-            )}
+
+            <section
+                class="home-work container"
+                id="work"
+                aria-labelledby="work-heading"
+            >
+                <h2 class="editorial-heading" id="work-heading">
+                    Our work
+                </h2>
+                <WorkCard
+                    title="Flock"
+                    description="An all in one system for model development"
+                    image="/images/blog_thumbnails/flock.webp"
+                    imageAlt="Seagulls flying together across a blue sky with white clouds"
+                    imageWidth={1600}
+                    imageHeight={1600}
+                />
+                <WorkCard
+                    title="Fellowship"
+                    description="Our approach to training the next generation of researchers"
+                    image="/images/blog_thumbnails/fellowship.webp"
+                    imageAlt="A dandelion seed head on its stem against a clear blue sky"
+                    imageWidth={1600}
+                    imageHeight={1600}
+                />
+                <WorkCard
+                    title="Castor"
+                    description="Evaluating language model safety from pretraining"
+                    image="/images/blog_thumbnails/castor.webp"
+                    imageAlt="A white radio telescope dish pointed at a blue sky"
+                    imageWidth={1600}
+                    imageHeight={1600}
+                />
+            </section>
         </div>
     </main>
 </BaseLayout>
