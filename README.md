@@ -4,17 +4,18 @@ The Cerulean marketing site and blog, built with Astro and deployed as static as
 
 ## Design system
 
-Read [the Cerulean style reference](docs/design-system.md) for the general visual
-language, tokens, artwork, and composition patterns across websites, presentations,
-reports, posters, teaching materials, and print. [Web implementation](docs/web-implementation.md)
-contains the Astro component contracts and homepage/blog/article recipes. The
-[blog implementation trial](docs/design-system-trial.md) explains how the guide was
-tested and clarified through a separate agent's implementation.
+Read [the Cerulean style reference](docs/design-system.md) for the visual language:
+Host Grotesk as the single typeface, real sky photography, color tokens, and composition
+patterns across websites, presentations, reports, posters, teaching materials, and print.
+Its [Website Adapter](docs/design-system.md#website-adapter) section maps those tokens to
+CSS and describes the homepage sky, header, and footer behavior.
 
-Shared primitives live in `src/styles/design-system.css`, with page-specific compositions
-in `home.css` and `blog.css`. `BaseLayout` owns the header, footer, theme restoration,
-and navigation. The homepage uses `headerMode="after-hero"`; interior pages use the
-default immediately visible header. Approved art lives in `public/images/design/`.
+Shared primitives live in `src/styles/design-system.css` (Evening overrides in `theme.css`),
+with page-specific compositions in `home.css` and `blog.css`. `BaseLayout` owns the header,
+footer, theme restoration, and navigation. The homepage uses `headerMode="after-hero"`;
+interior pages use the default immediately visible header. Approved photographs live in
+`public/images/blog_thumbnails/` as WebP; the logo lives in `public/images/design/`. Record
+each photo's photographer and source in the style reference's imagery table.
 
 ## Development
 
@@ -34,8 +35,8 @@ pnpm build
 Posts live in `src/content/blog` as Markdown files. The filename becomes the URL slug, so
 `src/content/blog/a-place-to-begin.md` is published at `/blog/a-place-to-begin`.
 
-Add the approved art under `public/images/blog_thumbnails` (or reuse approved art from
-`public/images/design`), then reference its public URL in the post frontmatter. This is
+Add the approved photograph under `public/images/blog_thumbnails` as WebP (or reuse one
+already there), then reference its public URL in the post frontmatter. This is
 the single source for listing art and the article's social image; do not override it
 by post ID in a template. Titles are rendered outside the artwork.
 
@@ -50,7 +51,7 @@ readingTime: "4 min read" # optional; calculated from the Markdown when omitted
 deck: "An optional subtitle shown on the article page."
 draft: false # optional; drafts are only included during local development
 thumbnail:
-    src: "/images/blog_thumbnails/post-slug.jpg"
+    src: "/images/blog_thumbnails/post-slug.webp"
     alt: "" # use empty text for decorative art, or describe an informative image
 ---
 
