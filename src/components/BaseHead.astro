@@ -49,3 +49,18 @@ const { title, description, image = "/images/cerulean.png" } = Astro.props;
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
+
+<!-- Google Analytics -->
+<script
+    is:inline
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-WGDCRBK3JG"
+></script>
+<script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+    gtag("config", "G-WGDCRBK3JG");
+</script>
