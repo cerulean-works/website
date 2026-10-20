@@ -9,7 +9,7 @@ import "../styles/home.css";
 <BaseLayout
     title={SITE_TITLE}
     description={SITE_DESCRIPTION}
-    image="/images/design/sky.jpg"
+    image="/images/design/sky-dunes.webp"
     bodyClass="home-page"
     headerMode="after-hero"
 >
@@ -17,10 +17,10 @@ import "../styles/home.css";
         <section class="home-hero" data-home-hero aria-label="Our mission">
             <img
                 class="home-hero-image"
-                src="/images/design/sky.jpg"
+                src="/images/design/sky-dunes.webp"
                 alt=""
-                width="1536"
-                height="1024"
+                width="2000"
+                height="3000"
                 fetchpriority="high"
                 loading="eager"
             />
@@ -33,59 +33,66 @@ import "../styles/home.css";
             </h1>
         </section>
 
-        <section class="home-mission" aria-label="About Cerulean">
-            <p>
-                We believe in science for everyone, not just the best-funded
-                labs. Maintaining a free and diverse AI landscape requires
-                enabling research for people from all different backgrounds. AI
-                research should be possible before university. AI research
-                should be accessible to community tool-builders. AI research
-                cannot afford to lose ideas to computing costs.
-            </p>
-            <p>
-                Cerulean is a student-led research lab that aims to reduce the
-                dependence on high-end hardware through clever algorithmic and
-                engineering advances. Our focus is on finding models that learn
-                more from less computation and less inter-accelerator
-                communication. We treat efficiency as a first class citizen and
-                being aggressively open accelerates the science world for all.
-                We build for efficiency in public so others can build on it.
-            </p>
-            <p>
-                We envision a world where anyone can experiment to their heart's
-                content. In that world, sky's the limit.
-            </p>
-        </section>
+        <div class="home-body">
+            <section class="home-mission" aria-label="About Cerulean">
+                <p>
+                    We believe in science for everyone, not just the best-funded
+                    labs. Maintaining a free and diverse AI landscape requires
+                    enabling research for people from all different backgrounds.
+                    AI research should be possible before university. AI
+                    research should be accessible to community tool-builders. AI
+                    research cannot afford to lose ideas to computing costs.
+                </p>
+                <p>
+                    Cerulean is a student-led research lab that aims to reduce
+                    the dependence on high-end hardware through clever
+                    algorithmic and engineering advances. Our focus is on
+                    finding models that learn more from less computation and
+                    less inter-accelerator communication. We treat efficiency as
+                    a first class citizen and being aggressively open
+                    accelerates the science world for all. We build for
+                    efficiency in public so others can build on it.
+                </p>
+                <p>
+                    We envision a world where anyone can experiment to their
+                    heart's content. In that world, sky's the limit.
+                </p>
+            </section>
 
-        <section
-            class="home-work container"
-            id="work"
-            aria-labelledby="work-heading"
-        >
-            <h2 class="editorial-heading" id="work-heading">
-                Our work
-            </h2>
-            <WorkCard
-                title="A place to begin"
-                href="/blog/a-place-to-begin/"
-                image="/images/design/sky.jpg"
-                imageAlt="Porcelain-white clouds sweeping across a deep blue cyanotype sky"
-                imagePosition="75% center"
-                imageWidth={1536}
-                imageHeight={1024}
-            />
-            <WorkCard
-                title="Castor"
-                description="Evaluating language model safety from pretraining"
-                image="/images/design/castor.jpg"
-                imageAlt="An oblique cyanotype print of an irregular stone fortress rising from a sheer fractured cliff"
-            />
-            <WorkCard
-                title="Cerulean Fellowship"
-                description="Our study group"
-                image="/images/design/fellowship.jpg"
-                imageAlt="An abstract blue photogram of overlapping fine mesh patterns producing a new field of interference"
-            />
-        </section>
+            <section
+                class="home-work container"
+                id="work"
+                aria-labelledby="work-heading"
+            >
+                <h2 class="editorial-heading" id="work-heading">
+                    Our work
+                </h2>
+                <WorkCard
+                    title="Flock"
+                    description="An all in one system for model development"
+                    image="/images/design/flock.webp"
+                    imageAlt="A small flock of birds flying in V formation above a cloud"
+                    imageWidth={1600}
+                    imageHeight={1600}
+                />
+                <WorkCard
+                    title="Castor"
+                    description="Evaluating language model safety from pretraining"
+                    image="/images/blog_thumbnails/castor.webp"
+                    imageAlt="The Milky Way glowing through thin clouds in a night sky"
+                    imagePosition="53% center"
+                    imageWidth={1800}
+                    imageHeight={600}
+                />
+                <WorkCard
+                    title="Fellowship"
+                    description="Our approach to training the next generation of researchers"
+                    image="/images/design/fellowship.webp"
+                    imageAlt="A dandelion seed head against a clear blue sky"
+                    imageWidth={1600}
+                    imageHeight={1600}
+                />
+            </section>
+        </div>
     </main>
 </BaseLayout>

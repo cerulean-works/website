@@ -6,7 +6,7 @@ author: "Cerulean"
 readingTime: "2 min read"
 deck: "Breaking down barriers to AI research, one experiment at a time."
 thumbnail:
-    src: "/images/design/sky.jpg"
+    src: "/images/design/sky-dunes.webp"
     alt: ""
     title: |-
         A place

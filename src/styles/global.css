@@ -123,12 +123,6 @@ a:hover {
 
 .js
     .site-header-wrap[data-header-mode="after-hero"]:not(.is-visible)
-    .header-contact {
-    display: none;
-}
-
-.js
-    .site-header-wrap[data-header-mode="after-hero"]:not(.is-visible)
     :focus-visible {
     outline-color: var(--c-on-sky);
 }
@@ -191,7 +185,8 @@ a:hover {
 }
 
 .site-footer {
-    background: var(--c-deep);
+    border-top: 1px solid var(--c-footer-rule);
+    background: var(--c-footer);
     color: var(--c-on-sky);
     padding-block: 65px 70px;
 }
@@ -229,6 +224,20 @@ a:hover {
     gap: 30px;
     width: 100%;
     min-height: 32px;
+}
+
+.footer-legal {
+    display: grid;
+    gap: 6px;
+    margin-top: 48px;
+    font-size: 13px;
+    color: color-mix(in srgb, var(--c-on-sky) 70%, transparent);
+}
+
+.footer-credits a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
 }
 
 .site-footer :focus-visible {
@@ -275,6 +284,10 @@ a:hover {
 
     .footer-socials a {
         min-height: 44px;
+    }
+
+    .footer-legal {
+        margin-top: 38px;
     }
 }
 

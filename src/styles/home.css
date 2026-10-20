@@ -1,36 +1,61 @@
+/*
+ * The sky is pinned to the viewport and the page scrolls over it, so rubber-band
+ * overscroll past the top reveals more of the same photo instead of an edge.
+ * Below the hero, the root color matches the footer for bottom overscroll.
+ */
+:root:has(.home-page) {
+    background: var(--c-footer);
+}
+
+.home-page {
+    background: transparent;
+}
+
 .home-hero {
+    --hero-position: center 30%;
     position: relative;
-    isolation: isolate;
     display: flex;
     align-items: flex-start;
     min-height: 100vh;
     min-height: 100dvh;
     padding: 116px 5.2% 100px;
     color: var(--c-on-sky);
-    background: var(--c-deep);
+}
+
+.home-hero-image,
+.home-hero::before {
+    position: fixed;
+    inset: 0 0 auto;
+    width: 100%;
+    height: 100vh;
+    height: 100lvh;
+    pointer-events: none;
 }
 
 .home-hero-image {
-    position: absolute;
     z-index: -2;
-    inset: 0;
-    width: 100%;
-    height: 100%;
     object-fit: cover;
-    object-position: center 55%;
+    object-position: var(--hero-position);
 }
 
 .home-hero::before {
     content: "";
-    position: absolute;
-    inset: 0;
     z-index: -1;
     background: linear-gradient(
         180deg,
         color-mix(in srgb, var(--c-deep) 16%, transparent),
         transparent 65%
     );
-    pointer-events: none;
+}
+
+/* Once the hero has scrolled away, bottom overscroll shows the footer color. */
+:root:has(.site-header-wrap.is-visible) .home-hero-image,
+:root:has(.site-header-wrap.is-visible) .home-hero::before {
+    visibility: hidden;
+}
+
+.home-body {
+    background: var(--c-paper);
 }
 
 .home-hero h1 {
@@ -90,11 +115,8 @@
 
 @media (max-width: 600px) {
     .home-hero {
+        --hero-position: 55% center;
         padding: 104px 22px 90px;
-    }
-
-    .home-hero-image {
-        object-position: 55% center;
     }
 
     .home-hero h1 {

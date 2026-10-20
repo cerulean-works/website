@@ -9,6 +9,9 @@
     --c-ink: #f4f2e9;
     --c-muted: #c1cbe0;
     --c-deep: #0c2048;
+    /* The page is already navy, so the footer continues it behind a rule. */
+    --c-footer: var(--c-paper);
+    --c-footer-rule: var(--c-rule);
     --c-link: #a8d4ff;
     --c-focus: #a8d4ff;
     --c-rule: #415577;

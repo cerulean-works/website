@@ -4,13 +4,15 @@
     --c-ink: #172a50;
     --c-muted: #4b5d79;
     --c-deep: #102c60;
+    --c-footer: var(--c-deep);
+    --c-footer-rule: transparent;
     --c-on-sky: #fffdf4;
     --c-link: #145a9a;
     --c-focus: #1768af;
     --c-rule: #cdd3db;
     --c-selection: #cce7fb;
-    --font-editorial: "Newsreader", Georgia, serif;
-    --font-ui: "DM Sans", Arial, sans-serif;
+    --font-editorial: "Host Grotesk", Arial, sans-serif;
+    --font-ui: "Host Grotesk", Arial, sans-serif;
     --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
     --c-gutter: 64px;
     --c-page-max: 1280px;
