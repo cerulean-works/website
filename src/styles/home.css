@@ -38,6 +38,26 @@
     object-position: var(--hero-position);
 }
 
+/*
+ * Daylight shows the cirrus sky; Evening fades the aurora in over it, so the
+ * theme toggle crossfades the hero instead of cutting between photographs.
+ */
+.home-hero-image-night {
+    opacity: 0;
+    object-position: var(--hero-night-position, var(--hero-position));
+    transition: opacity 600ms ease;
+}
+
+.dark-theme .home-hero-image-night {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hero-image-night {
+        transition: none;
+    }
+}
+
 .home-hero::before {
     content: "";
     z-index: -1;
@@ -115,7 +135,8 @@
 
 @media (max-width: 600px) {
     .home-hero {
-        --hero-position: 55% center;
+        --hero-position: 40% center;
+        --hero-night-position: 55% center;
         padding: 104px 22px 90px;
     }
 

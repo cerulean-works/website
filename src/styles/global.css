@@ -240,6 +240,15 @@ a:hover {
     text-underline-offset: 0.2em;
 }
 
+.footer-credits-night,
+.dark-theme .footer-credits-day {
+    display: none;
+}
+
+.dark-theme .footer-credits-night {
+    display: block;
+}
+
 .site-footer :focus-visible {
     outline-color: var(--c-on-sky);
 }

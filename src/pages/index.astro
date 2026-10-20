@@ -9,18 +9,27 @@ import "../styles/home.css";
 <BaseLayout
     title={SITE_TITLE}
     description={SITE_DESCRIPTION}
-    image="/images/blog_thumbnails/sky-dunes.webp"
+    image="/images/blog_thumbnails/hero-day.webp"
     bodyClass="home-page"
     headerMode="after-hero"
 >
     <main id="main-content">
         <section class="home-hero" data-home-hero aria-label="Our mission">
+            <!-- The theme is chosen before paint; CSS shows the matching sky. -->
             <img
-                class="home-hero-image"
-                src="/images/blog_thumbnails/sky-dunes.webp"
+                class="home-hero-image home-hero-image-day"
+                src="/images/blog_thumbnails/hero-day.webp"
                 alt=""
-                width="2000"
-                height="3000"
+                width="3000"
+                height="2000"
+                loading="eager"
+            />
+            <img
+                class="home-hero-image home-hero-image-night"
+                src="/images/blog_thumbnails/hero-night.webp"
+                alt=""
+                width="3000"
+                height="2000"
                 fetchpriority="high"
                 loading="eager"
             />
@@ -71,7 +80,7 @@ import "../styles/home.css";
                     title="Flock"
                     description="An all in one system for model development"
                     image="/images/blog_thumbnails/flock.webp"
-                    imageAlt="A small flock of birds flying in V formation above a cloud"
+                    imageAlt="Seagulls flying together across a blue sky with white clouds"
                     imageWidth={1600}
                     imageHeight={1600}
                 />
@@ -79,16 +88,15 @@ import "../styles/home.css";
                     title="Castor"
                     description="Evaluating language model safety from pretraining"
                     image="/images/blog_thumbnails/castor.webp"
-                    imageAlt="The Milky Way glowing through thin clouds in a night sky"
-                    imagePosition="53% center"
-                    imageWidth={1800}
-                    imageHeight={600}
+                    imageAlt="A white radio telescope dish pointed at a blue sky"
+                    imageWidth={1600}
+                    imageHeight={1600}
                 />
                 <WorkCard
                     title="Fellowship"
                     description="Our approach to training the next generation of researchers"
                     image="/images/blog_thumbnails/fellowship.webp"
-                    imageAlt="A dandelion seed head against a clear blue sky"
+                    imageAlt="A dandelion seed head on its stem against a clear blue sky"
                     imageWidth={1600}
                     imageHeight={1600}
                 />
