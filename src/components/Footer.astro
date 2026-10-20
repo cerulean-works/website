@@ -1,7 +1,26 @@
----
-const today = new Date();
----
-
-<footer class="site-footer container">
-    <span>© {today.getFullYear()} Cerulean</span>
+<footer class="site-footer" id="contact">
+    <div class="site-footer-inner container">
+        <div class="footer-contact">
+            <h2>Contact</h2>
+            <a class="footer-email" href="mailto:hi@cerulean.works">
+                hi@cerulean.works
+            </a>
+        </div>
+        <nav class="footer-socials" aria-label="Social links">
+            <a
+                href="https://github.com/cerulean-works/"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                GitHub <span aria-hidden="true">↗</span>
+            </a>
+            <a
+                href="https://huggingface.co/cerulean-works"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Hugging Face <span aria-hidden="true">↗</span>
+            </a>
+        </nav>
+    </div>
 </footer>

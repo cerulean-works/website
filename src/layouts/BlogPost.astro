@@ -2,6 +2,7 @@
 import type { CollectionEntry } from "astro:content";
 import { formatPostDate } from "../lib/blog";
 import BaseLayout from "./BaseLayout.astro";
+import "../styles/blog.css";
 
 type Props = CollectionEntry<"blog">["data"] & {
     readingTime: string;
@@ -26,7 +27,7 @@ const displayDate = formatPostDate(pubDate);
     image={thumbnail.src}
     bodyClass="blog-page"
 >
-    <main id="main-content" class="article-main container">
+    <main id="main-content" class="article-main reading-column">
         <a class="back-link" href="/blog">
             <span aria-hidden="true">←</span> All posts
         </a>
@@ -36,20 +37,15 @@ const displayDate = formatPostDate(pubDate);
                 {deck && <p class="article-deck">{deck}</p>}
                 <div class="article-meta">
                     <span>{author}</span>
-                    <span aria-hidden="true">·</span>
                     <time datetime={pubDate.toISOString()}>{displayDate}</time>
-                    <span aria-hidden="true">·</span>
                     <span>{readingTime}</span>
                     {updatedDate && (
-                        <>
-                            <span aria-hidden="true">·</span>
-                            <span>
-                                Updated{" "}
-                                <time datetime={updatedDate.toISOString()}>
-                                    {formatPostDate(updatedDate)}
-                                </time>
-                            </span>
-                        </>
+                        <span>
+                            Updated{" "}
+                            <time datetime={updatedDate.toISOString()}>
+                                {formatPostDate(updatedDate)}
+                            </time>
+                        </span>
                     )}
                 </div>
             </header>

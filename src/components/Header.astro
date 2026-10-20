@@ -7,13 +7,17 @@ const isBlog =
 ---
 
 <header class="site-header container">
-    <a class="wordmark" href="/" aria-label="Cerulean home">
+    <a class="wordmark" href="/" aria-label="Cerulean home" data-header-reveal>
         <LogoMark />
-        <span>Cerulean</span>
+        <span class="wordmark-name">Cerulean</span>
     </a>
     <nav aria-label="Main navigation">
-        <a href="/blog" class:list={{ active: isBlog }}>
+        <a href="/#work">Work</a>
+        <a href="/blog/" aria-current={isBlog ? "page" : undefined}>
             Blog
+        </a>
+        <a class="header-contact" href="#contact" data-header-reveal>
+            Contact
         </a>
     </nav>
     <ThemeToggle />

@@ -2,6 +2,20 @@
 
 The Cerulean marketing site and blog, built with Astro and deployed as static assets on Cloudflare.
 
+## Design system
+
+Read [the Cerulean style reference](docs/design-system.md) for the general visual
+language, tokens, artwork, and composition patterns across websites, presentations,
+reports, posters, teaching materials, and print. [Web implementation](docs/web-implementation.md)
+contains the Astro component contracts and homepage/blog/article recipes. The
+[blog implementation trial](docs/design-system-trial.md) explains how the guide was
+tested and clarified through a separate agent's implementation.
+
+Shared primitives live in `src/styles/design-system.css`, with page-specific compositions
+in `home.css` and `blog.css`. `BaseLayout` owns the header, footer, theme restoration,
+and navigation. The homepage uses `headerMode="after-hero"`; interior pages use the
+default immediately visible header. Approved art lives in `public/images/design/`.
+
 ## Development
 
 ```sh
@@ -20,8 +34,10 @@ pnpm build
 Posts live in `src/content/blog` as Markdown files. The filename becomes the URL slug, so
 `src/content/blog/a-place-to-begin.md` is published at `/blog/a-place-to-begin`.
 
-Add the card image under `public/images/blog_thumbnails`, then reference its public URL in the
-post frontmatter:
+Add the approved art under `public/images/blog_thumbnails` (or reuse approved art from
+`public/images/design`), then reference its public URL in the post frontmatter. This is
+the single source for listing art and the article's social image; do not override it
+by post ID in a template. Titles are rendered outside the artwork.
 
 ```md
 ---
@@ -36,9 +52,6 @@ draft: false # optional; drafts are only included during local development
 thumbnail:
     src: "/images/blog_thumbnails/post-slug.jpg"
     alt: "" # use empty text for decorative art, or describe an informative image
-    title: |-
-        Optional words
-        over the image.
 ---
 
 Write the post here in Markdown.

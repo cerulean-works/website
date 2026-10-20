@@ -10,6 +10,8 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 
 ## Documentation
 
+For visual work, read [the Cerulean style reference](docs/design-system.md) for the general identity across digital, presentation, document, and print formats. For website changes, also read [Web implementation](docs/web-implementation.md) and reuse its shared components, tokens, and page recipes. [The implementation trial](docs/design-system-trial.md) records ambiguities found when another agent applied the original web guide to the blog. Update the general guide for cross-format identity changes and the web companion for website-specific behavior.
+
 Full documentation: https://docs.astro.build
 
 Consult these guides before working on related tasks:

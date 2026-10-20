@@ -1,89 +1,91 @@
 ---
-import Aurora from "../components/Aurora.astro";
-import LogoMark from "../components/LogoMark.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { formatPostDate, getBlogPosts, getPostHref } from "../lib/blog";
-
-const posts = await getBlogPosts();
-const latestPost = posts[0];
+import LogoMark from "../components/LogoMark.astro";
+import WorkCard from "../components/WorkCard.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import "../styles/home.css";
 ---
 
 <BaseLayout
     title={SITE_TITLE}
     description={SITE_DESCRIPTION}
+    image="/images/design/sky.jpg"
     bodyClass="home-page"
+    headerMode="after-hero"
 >
-    <Aurora />
-    <main id="main-content" class="home-main container">
-        <h1 class="hero-title">
-            <span class="hero-brand">
-                <LogoMark />
-                Cerulean
-            </span>{" "}
-            is a lab for
-            <br class="desktop-break" /> breaking down barriers and
-            <br class="desktop-break" /> democratizing AI exploration.
-        </h1>
-        <div class="home-columns">
-            <section class="intro-copy" aria-label="About Cerulean">
-                <p>
-                    <span class="small-caps">
-                        We believe in science for everyone,
-                    </span>{" "}
-                    not just the best-funded labs. Maintaining a free and
-                    diverse AI landscape requires enabling research for people
-                    from all different backgrounds. AI research should be
-                    possible before university. AI research should be accessible
-                    to community tool-builders. AI research cannot afford to
-                    lose ideas to computing costs.
-                </p>
-                <p>
-                    Cerulean is a student-led research lab that aims to reduce
-                    the dependence on high-end hardware through clever
-                    algorithmic and engineering advances. Our focus is on
-                    finding models that learn more from less computation and
-                    less inter-accelerator communication. We treat efficiency as
-                    a first class citizen and being aggressively open
-                    accelerates the science world for all. We build for
-                    efficiency in public so others can build on it.
-                </p>
-                <p>
-                    We envision a world where <i>anyone</i> can experiment to
-                    their heart's content. In that world,{" "}
-                    <span class="sky-signature">sky's the limit.</span>
-                </p>
-                <div class="contact-block" id="contact">
-                    <p>
-                        Have a question or an idea to share?
-                        <br />
-                        We’d love to hear from you.
-                    </p>
-                    <a class="text-link" href="mailto:hi@cerulean.works">
-                        hi [at] cerulean.works <span aria-hidden="true">↗</span>
-                    </a>
-                </div>
-            </section>
-            {latestPost && (
-                <aside class="latest" aria-labelledby="latest-heading">
-                    <h2 id="latest-heading" class="eyebrow">
-                        The latest
-                    </h2>
-                    <a class="latest-link" href={getPostHref(latestPost)}>
-                        <h3>{latestPost.data.title}</h3>
-                        <p>{latestPost.data.description}</p>
-                        <time
-                            class="post-date"
-                            datetime={latestPost.data.pubDate.toISOString()}
-                        >
-                            {formatPostDate(latestPost.data.pubDate)}
-                        </time>
-                    </a>
-                    <a class="all-posts" href="/blog">
-                        All posts <span aria-hidden="true">→</span>
-                    </a>
-                </aside>
-            )}
-        </div>
+    <main id="main-content">
+        <section class="home-hero" data-home-hero aria-label="Our mission">
+            <img
+                class="home-hero-image"
+                src="/images/design/sky.jpg"
+                alt=""
+                width="1536"
+                height="1024"
+                fetchpriority="high"
+                loading="eager"
+            />
+            <h1>
+                <span class="mission-line">
+                    <LogoMark /> Cerulean is a lab for
+                </span>
+                <span class="mission-line">breaking down barriers and</span>
+                <span class="mission-line">democratizing AI exploration.</span>
+            </h1>
+        </section>
+
+        <section class="home-mission" aria-label="About Cerulean">
+            <p>
+                We believe in science for everyone, not just the best-funded
+                labs. Maintaining a free and diverse AI landscape requires
+                enabling research for people from all different backgrounds. AI
+                research should be possible before university. AI research
+                should be accessible to community tool-builders. AI research
+                cannot afford to lose ideas to computing costs.
+            </p>
+            <p>
+                Cerulean is a student-led research lab that aims to reduce the
+                dependence on high-end hardware through clever algorithmic and
+                engineering advances. Our focus is on finding models that learn
+                more from less computation and less inter-accelerator
+                communication. We treat efficiency as a first class citizen and
+                being aggressively open accelerates the science world for all.
+                We build for efficiency in public so others can build on it.
+            </p>
+            <p>
+                We envision a world where anyone can experiment to their heart's
+                content. In that world, sky's the limit.
+            </p>
+        </section>
+
+        <section
+            class="home-work container"
+            id="work"
+            aria-labelledby="work-heading"
+        >
+            <h2 class="editorial-heading" id="work-heading">
+                Our work
+            </h2>
+            <WorkCard
+                title="A place to begin"
+                href="/blog/a-place-to-begin/"
+                image="/images/design/sky.jpg"
+                imageAlt="Porcelain-white clouds sweeping across a deep blue cyanotype sky"
+                imagePosition="75% center"
+                imageWidth={1536}
+                imageHeight={1024}
+            />
+            <WorkCard
+                title="Castor"
+                description="Evaluating language model safety from pretraining"
+                image="/images/design/castor.jpg"
+                imageAlt="An oblique cyanotype print of an irregular stone fortress rising from a sheer fractured cliff"
+            />
+            <WorkCard
+                title="Cerulean Fellowship"
+                description="Our study group"
+                image="/images/design/fellowship.jpg"
+                imageAlt="An abstract blue photogram of overlapping fine mesh patterns producing a new field of interference"
+            />
+        </section>
     </main>
 </BaseLayout>
