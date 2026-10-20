@@ -51,9 +51,10 @@ const { title, description, image = "/images/cerulean.png" } = Astro.props;
 <meta name="twitter:card" content="summary_large_image" />
 
 <!-- Google Analytics -->
+<!-- Defer execution until parsing and stylesheet loading finish. -->
 <script
     is:inline
-    async
+    defer
     src="https://www.googletagmanager.com/gtag/js?id=G-WGDCRBK3JG"
 ></script>
 <script is:inline>
