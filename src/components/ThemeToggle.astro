@@ -41,7 +41,14 @@
         toggle?.setAttribute("title", label);
     };
     updateLabel();
+    let transitionTimer: number | undefined;
     toggle?.addEventListener("click", () => {
+        root.classList.add("theme-transitioning");
+        window.clearTimeout(transitionTimer);
+        transitionTimer = window.setTimeout(
+            () => root.classList.remove("theme-transitioning"),
+            650
+        );
         const dark = root.classList.toggle("dark-theme");
         updateLabel();
         try {
