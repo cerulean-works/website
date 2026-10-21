@@ -111,10 +111,24 @@ a:hover {
     transition: color 400ms ease;
 }
 
-/* The canvas fades out downward so content dissolves under the header. */
 .js .site-header-wrap[data-header-mode="after-hero"].is-visible {
-    background: linear-gradient(var(--c-paper) 30%, 75%, transparent);
     color: var(--c-ink);
+}
+
+/* Mask a solid fill so its color can transition with the page canvas. */
+.js .site-header-wrap[data-header-mode="after-hero"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--c-paper);
+    mask-image: linear-gradient(black 30%, 75%, transparent);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.js .site-header-wrap[data-header-mode="after-hero"].is-visible::before {
+    visibility: visible;
 }
 
 /* The brand eases in as the header settles instead of popping into place. */
