@@ -1,0 +1,40 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+    authors: CollectionEntry<"blog">["data"]["author"];
+}
+
+const { authors } = Astro.props;
+const namedAuthors = authors.filter((entry) => entry.author !== "et al");
+const hasEtAl = authors.some((entry) => entry.author === "et al");
+---
+
+<span class="post-authors">
+    {namedAuthors.map(({ author, url }, index) => (
+        <>
+            {index > 0 && (index === namedAuthors.length - 1 ? " and " : ", ")}
+            {url ? (
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                    {author}
+                </a>
+            ) : (
+                author
+            )}
+        </>
+    ))}
+    {hasEtAl && (
+        <>
+            {namedAuthors.length > 0 && " in collaboration with "}
+            others at Cerulean
+        </>
+    )}
+</span>
+
+<style>
+    .post-authors a {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+    }
+</style>

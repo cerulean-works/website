@@ -1,5 +1,6 @@
 ---
 import PostThumbnail from "../../components/PostThumbnail.astro";
+import PostAuthors from "../../components/PostAuthors.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import {
     formatPostDate,
@@ -25,34 +26,33 @@ const description = "Notes, ideas, and things we’re learning at Cerulean.";
         </header>
         <div class="post-list">
             {posts.map((post, index) => (
-                <article>
+                <article class="post-row">
                     <a
                         href={getPostHref(post)}
-                        class="post-row"
                         aria-labelledby={`post-title-${index}`}
                     >
                         <PostThumbnail
                             thumbnail={post.data.thumbnail}
                             loading={index === 0 ? "eager" : "lazy"}
                         />
-                        <div class="post-summary">
+                    </a>
+                    <div class="post-summary">
+                        <a href={getPostHref(post)}>
                             <h2 id={`post-title-${index}`}>
                                 {post.data.title}
                             </h2>
                             <p class="post-description">
                                 {post.data.description}
                             </p>
-                            <div class="post-meta">
-                                <span>{post.data.author}</span>
-                                <time
-                                    datetime={post.data.pubDate.toISOString()}
-                                >
-                                    {formatPostDate(post.data.pubDate)}
-                                </time>
-                                <span>{getReadingTime(post)}</span>
-                            </div>
+                        </a>
+                        <div class="post-meta">
+                            <PostAuthors authors={post.data.author} />
+                            <time datetime={post.data.pubDate.toISOString()}>
+                                {formatPostDate(post.data.pubDate)}
+                            </time>
+                            <span>{getReadingTime(post)}</span>
                         </div>
-                    </a>
+                    </div>
                 </article>
             ))}
         </div>

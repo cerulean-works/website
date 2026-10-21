@@ -49,6 +49,13 @@ These are sRGB reference values. For print, convert through the intended output 
 
 The two type tokens remain separate roles even though they currently resolve to the same family. `font.display` is the expressive scale (titles, mission, prose); `font.utility` is information (navigation, dates, captions, descriptions). Keeping both roles lets a future pairing change without rewriting every composition.
 
+### Geist — Website reading · `font.reading`
+
+Website exception: blog article prose, lists, blockquotes, captions, and tables use
+Geist via the article-scoped `--font-reading` token. Load its regular and italic
+variable faces from Google Fonts only on article pages. Article headings, metadata,
+navigation, and all other brand typography retain Host Grotesk; code stays monospace.
+
 ### Monospace — Technical content · `font.mono`
 
 - **Role:** Code, literal identifiers, commands, and aligned technical output. Use the host's readable system monospace; it is not a second display voice.
@@ -219,6 +226,10 @@ The signature is **real sky photography with an intentional crop**. Favor natura
 
 The approved image family:
 
+The homepage uses photographs in the hero and Our work, while Blogs uses text-only
+entries. These photographs also remain approved for blog listings, social previews,
+and other Cerulean formats.
+
 | Subject     | Concept                                | Composition                                                                                               | Source                                                                                    | Asset                                                               |
 | ----------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Sky (day)   | Room to explore                        | Wide daylight sky: deep blue upper left for the headline, sweeping cirrus and the sun to the lower right  | Vincenzo Di Giorgi, [Unsplash](https://unsplash.com/photos/Ioy3OB0U5cI)                   | [hero-day.webp](../public/images/blog_thumbnails/hero-day.webp)     |
@@ -376,6 +387,9 @@ Where things live:
 
 Website behavior:
 
+- **Blog reading scale:** article pages have no All posts back link; the shared Blog navigation remains available. Use a 720px maximum reading column, 18px body text at 1.65 line height, a 36px title (30px on phones), 28px section headings, and 14px metadata. Blog listings use the same smaller scale, with 26px post titles and 16px summaries. Use Geist for reading text, Host Grotesk for headings and metadata, and the existing theme colors.
+- **Homepage blogs:** after Our work, Blogs shows the three latest available posts as text: a large entry on the left spanning two rows, with two smaller entries stacked on the right. All entries show titles and descriptions, with no thumbnails. Only the featured entry shows its date, automatic reading time, and authors; the two smaller entries omit that metadata, including on phones where the entries become a single column. Show only available posts when there are fewer than three, and link All posts to `/blog`. `PostThumbnail` remains in use on the blog index.
+- **Blog metadata:** the `author` array accepts plain name strings, `{ author, url? }` objects, and `"et al"` (also accepted as `{ author: "et al" }`). `PostAuthors` links names only when a URL is provided; other names are plain text. The special `et al` entry appends “in collaboration with others at Cerulean”; omitting it shows only the named authors. Reading time is calculated from Markdown at 200 words per minute, rounded up to at least one minute. Posts have no deck/subtitle or manual reading-time field.
 - **Analytics:** `BaseHead.astro` queues Google Analytics (`G-WGDCRBK3JG`) initialization on every page through the shared layout. The external script uses `defer` so it downloads in parallel and executes after HTML parsing and stylesheet loading, avoiding Analytics execution during initial page construction. Keep `defer` rather than `async` to preserve this order.
 - **Homepage sky:** the hero photograph is pinned to the viewport (`position: fixed`) and the page scrolls over it, so overscrolling past the top reveals more sky rather than a blank edge. Once the hero has scrolled out of view, the photograph is hidden and the root background takes `--c-footer`, so overscroll at the bottom matches the footer. Content below the hero sits in `.home-body` with an opaque canvas background. Daylight shows `hero-day.webp` and Evening fades `hero-night.webp` in over it (a 600ms crossfade, instant under reduced motion); both images are in the markup and the theme class decides which one is visible. The crop is set with `--hero-position` (`center 30%` on wide screens, `40% center` on narrow ones), and the night image can override it with `--hero-night-position` (`55% center` on narrow screens).
 - **Header:** the homepage uses `headerMode="after-hero"`; the wordmark appears and the header gains a canvas gradient (solid at the top, transparent at the bottom) only after the hero leaves the viewport. The gradient appears at once; the wordmark fades and drops 6px into place and the header text color eases over 400ms (instant under reduced motion). Navigation is Work and Blog plus the theme toggle; contact lives in the footer.
