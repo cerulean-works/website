@@ -1,6 +1,6 @@
 ---
-import PostAuthors from "./PostAuthors.astro";
-import { formatPostDate, getBlogPosts, getPostHref } from "../lib/blog";
+import PostCard from "./PostCard.astro";
+import { getBlogPosts } from "../lib/blog";
 
 const posts = (await getBlogPosts()).slice(0, 3);
 ---
@@ -19,25 +19,9 @@ const posts = (await getBlogPosts()).slice(0, 3);
                 All posts <span aria-hidden="true">→</span>
             </a>
         </header>
-        <div class="latest-posts">
+        <div class="post-cards">
             {posts.map((post) => (
-                <article class="latest-post">
-                    <time
-                        class="latest-post-date"
-                        datetime={post.data.pubDate.toISOString()}
-                    >
-                        {formatPostDate(post.data.pubDate)}
-                    </time>
-                    <h3>
-                        <a class="latest-post-link" href={getPostHref(post)}>
-                            {post.data.title}
-                        </a>
-                    </h3>
-                    <p class="latest-post-description">
-                        {post.data.description}
-                    </p>
-                    <PostAuthors authors={post.data.author} avatars compact />
-                </article>
+                <PostCard post={post} headingLevel={3} />
             ))}
         </div>
     </section>
