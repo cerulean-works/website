@@ -182,3 +182,30 @@
         display: none;
     }
 }
+
+.home-blogs {
+    padding-bottom: var(--c-section-space);
+}
+
+.home-blogs-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 36px;
+}
+
+.home-blogs-heading h2 {
+    font-size: clamp(32px, 3.4vw, 42px);
+}
+
+.home-blogs-heading > a {
+    flex: none;
+    padding-block: 12px;
+}
+
+@media (max-width: 600px) {
+    .home-blogs-heading {
+        margin-bottom: 24px;
+    }
+}

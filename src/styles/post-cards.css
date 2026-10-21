@@ -1,0 +1,103 @@
+/* Post cards shared by the homepage Blogs section and the blog index. */
+.post-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Each card spans four shared rows so meta, titles, descriptions, and
+       bylines align across a row of cards. */
+    grid-auto-rows: auto minmax(140px, auto) auto auto;
+    gap: var(--c-grid-gap);
+}
+
+/* Flat panel: a tint of the canvas, square corners, no shadow. */
+.post-card {
+    --avatar-ring: var(--c-panel);
+    position: relative;
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    min-width: 0;
+    padding: 24px;
+    background: var(--avatar-ring);
+}
+
+.post-card:hover {
+    --avatar-ring: var(--c-panel-hover);
+}
+
+.post-card:has(.post-card-link:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+}
+
+.post-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    color: var(--c-muted);
+    font: 400 14px/1.5 var(--font-ui);
+}
+
+.post-card-title {
+    margin-top: 12px;
+    font: 400 clamp(24px, 2.2vw, 28px) / 1.2 var(--font-editorial);
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+/* The title link covers the whole card; author links sit above it. */
+.post-card-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.post-card-link:hover,
+.post-card-link:focus-visible {
+    text-decoration: none;
+    outline: none;
+}
+
+.post-card-description {
+    margin-top: 48px;
+    color: var(--c-muted);
+    font: 300 15px/1.5 var(--font-ui);
+}
+
+.post-card .post-authors {
+    margin-top: 16px;
+    color: var(--c-ink);
+    font: 400 14px/1.5 var(--font-ui);
+    overflow-wrap: anywhere;
+}
+
+.post-card .author-name {
+    font-weight: 500;
+}
+
+.post-card .post-authors a {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 1000px) {
+    .post-cards {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: auto;
+    }
+
+    .post-card {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .post-card-description {
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 600px) {
+    .post-card {
+        padding: 20px;
+    }
+}

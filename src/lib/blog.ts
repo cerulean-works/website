@@ -33,13 +33,12 @@ export function formatPostDate(date: Date) {
 }
 
 export function getReadingTime(post: BlogPost) {
-    if (post.data.readingTime) return post.data.readingTime;
-
     const plainText = (post.body ?? "")
         .replace(/```[\s\S]*?```/g, " ")
-        .replace(/`[^`]*`/g, " ")
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
         .replace(/<[^>]+>/g, " ")
-        .replace(/[#[\]()*_>~-]/g, " ");
+        .replace(/[`#[\]()*_>~-]/g, " ");
     const words = plainText.trim().match(/\S+/g)?.length ?? 0;
 
     return `${Math.max(1, Math.ceil(words / 200))} min read`;

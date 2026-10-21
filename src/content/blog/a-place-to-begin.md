@@ -2,15 +2,11 @@
 title: "A place to begin"
 description: "Introducing Cerulean: a student-led lab working to make AI research more accessible through efficient training."
 pubDate: "2026-09-13"
-author: "Cerulean"
-readingTime: "2 min read"
-deck: "Breaking down barriers to AI research, one experiment at a time."
+author:
+    - author: "Cerulean Labs"
 thumbnail:
     src: "/images/blog_thumbnails/sky-dunes.webp"
     alt: ""
-    title: |-
-        A place
-        to begin.
 ---
 
 We believe in science for everyone. A student should be able to explore an idea before university. A community tool-builder should be able to turn a useful observation into a research question. People from different backgrounds should have room to experiment, contribute, and challenge what we think we know.

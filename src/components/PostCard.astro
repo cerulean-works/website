@@ -1,0 +1,35 @@
+---
+import PostAuthors from "./PostAuthors.astro";
+import {
+    formatPostDate,
+    getPostHref,
+    getReadingTime,
+    type BlogPost,
+} from "../lib/blog";
+import "../styles/post-cards.css";
+
+interface Props {
+    post: BlogPost;
+    /** Heading level for the title, so it nests under the page outline. */
+    headingLevel?: 2 | 3;
+}
+
+const { post, headingLevel = 2 } = Astro.props;
+const Heading = `h${headingLevel}` as const;
+---
+
+<article class="post-card">
+    <p class="post-card-meta">
+        <time datetime={post.data.pubDate.toISOString()}>
+            {formatPostDate(post.data.pubDate)}
+        </time>
+        <span>{getReadingTime(post)}</span>
+    </p>
+    <Heading class="post-card-title">
+        <a class="post-card-link" href={getPostHref(post)}>
+            {post.data.title}
+        </a>
+    </Heading>
+    <p class="post-card-description">{post.data.description}</p>
+    <PostAuthors authors={post.data.author} avatars compact />
+</article>

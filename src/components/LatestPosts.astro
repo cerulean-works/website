@@ -1,0 +1,28 @@
+---
+import PostCard from "./PostCard.astro";
+import { getBlogPosts } from "../lib/blog";
+
+const posts = (await getBlogPosts()).slice(0, 3);
+---
+
+{posts.length > 0 && (
+    <section
+        class="home-blogs container"
+        id="blogs"
+        aria-labelledby="blogs-heading"
+    >
+        <header class="home-blogs-heading">
+            <h2 class="editorial-heading" id="blogs-heading">
+                Blogs
+            </h2>
+            <a class="text-link" href="/blog">
+                All posts <span aria-hidden="true">→</span>
+            </a>
+        </header>
+        <div class="post-cards">
+            {posts.map((post) => (
+                <PostCard post={post} headingLevel={3} />
+            ))}
+        </div>
+    </section>
+)}

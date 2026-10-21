@@ -49,6 +49,13 @@ These are sRGB reference values. For print, convert through the intended output 
 
 The two type tokens remain separate roles even though they currently resolve to the same family. `font.display` is the expressive scale (titles, mission, prose); `font.utility` is information (navigation, dates, captions, descriptions). Keeping both roles lets a future pairing change without rewriting every composition.
 
+### Geist — Website reading · `font.reading`
+
+Website exception: blog article prose, lists, blockquotes, captions, and tables use
+Geist via the article-scoped `--font-reading` token. Load its regular and italic
+variable faces from Google Fonts only on article pages. Article headings, metadata,
+navigation, and all other brand typography retain Host Grotesk; code stays monospace.
+
 ### Monospace — Technical content · `font.mono`
 
 - **Role:** Code, literal identifiers, commands, and aligned technical output. Use the host's readable system monospace; it is not a second display voice.
@@ -97,12 +104,12 @@ Use the scale to establish relationships, then make optical adjustments for the 
 
 ### Border Radius
 
-| Element                     | Value               | Treatment                                                    |
-| --------------------------- | ------------------- | ------------------------------------------------------------ |
-| Photographs and panels      | 0                   | Sharp rectangle or square; no enclosing card shell           |
-| Reading surfaces and tables | 0                   | Flat, aligned, no floating panel effect                      |
-| Logo                        | Circle              | Preserve the supplied mark and its proportions               |
-| Icon-only utility control   | Circle where useful | A functional exception, not a shape to repeat around content |
+| Element                     | Value               | Treatment                                                                                                 |
+| --------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
+| Photographs and panels      | 0                   | Sharp rectangle or square; no enclosing card shell around photographs; text listing cards use a flat tint |
+| Reading surfaces and tables | 0                   | Flat, aligned, no floating panel effect                                                                   |
+| Logo                        | Circle              | Preserve the supplied mark and its proportions                                                            |
+| Icon-only utility control   | Circle where useful | A functional exception, not a shape to repeat around content                                              |
 
 ### Layout
 
@@ -218,6 +225,10 @@ Depth comes from the photograph itself, scale, cropping, and the transition betw
 The signature is **real sky photography with an intentional crop**. Favor natural light, clean saturated daylight blues, deep night indigos, and lots of uninterrupted sky. One clear subject per image, with room around it. Photographs keep their natural color; they belong because of their light and space, not because they have been tinted. Check that detail (stars, distant birds, fine seed heads) remains legible at the final reproduction size; a subject that reads in a full-screen image may vanish on a small card.
 
 The approved image family:
+
+The homepage uses photographs in the hero and Our work, while Blogs uses text-only
+entries. These photographs also remain approved for social previews
+and other Cerulean formats.
 
 | Subject     | Concept                                | Composition                                                                                               | Source                                                                                    | Asset                                                               |
 | ----------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -371,11 +382,14 @@ Where things live:
 - `src/styles/design-system.css`: Daylight tokens and layout primitives (`.container`, `.reading-column`, `.artwork-square`).
 - `src/styles/theme.css`: Evening token overrides, applied by the `.dark-theme` class on `<html>` (dark is the default).
 - `src/styles/global.css`: header, footer, and shared element styles; `home.css` and `blog.css` hold page compositions.
-- `src/components/WorkCard.astro`: the Work Portrait. `src/components/Footer.astro`: the Closing Field.
+- `src/components/WorkCard.astro`: the Work Portrait. `src/components/PostCard.astro`: the blog post card. `src/components/Footer.astro`: the Closing Field.
 - `public/images/blog_thumbnails/`: approved photographs (hero, work portraits, post thumbnails) as WebP. `public/images/design/logo.png`: the mark.
 
 Website behavior:
 
+- **Blog reading scale:** article pages have no All posts back link; the shared Blog navigation remains available. Use a 720px maximum reading column, 18px body text at 1.65 line height, a 36px title (30px on phones), 28px section headings, and 14px metadata. Use Geist for reading text, Host Grotesk for headings and metadata, and the existing theme colors.
+- **Post cards:** the homepage Blogs section (the three latest posts, after Our work, with All posts linking to `/blog`) and the `/blog` index both use `PostCard`, styled in `post-cards.css`. Cards sit three to a row, stacking into a single column below 1000px, with no thumbnails. Each card shows the date and reading time, the title, the description, and the authors. Cards in a row share grid rows (CSS subgrid), so these lines align across the row. Card bylines are compact: at most two names, then “and N others” for the remaining named authors, or “and others” when only the `et al` credit remains; article pages keep the full credit. Descriptions use weight 300 and author names weight 500 so the byline reads clearly. Authors show 20px overlapping avatars: the author's `avatar` path or https URL, else their GitHub picture when `url` is a GitHub profile, else the Cerulean mark for Cerulean and the `et al` credit, else initials. Cards are flat panels: `--c-panel` fill (`--c-ink` mixed 4% into `--c-paper`, 7% on hover via `--c-panel-hover`), square corners, no border or shadow. The whole card is the title link; author links stay separately clickable. Post thumbnails are used only for social previews.
+- **Blog metadata:** the `author` array accepts plain name strings, `{ author, url? }` objects, and `"et al"` (also accepted as `{ author: "et al" }`). `PostAuthors` links names only when a URL is provided; other names are plain text. The special `et al` entry appends “in collaboration with others at Cerulean”; omitting it shows only the named authors. Reading time is calculated from Markdown at 200 words per minute, rounded up to at least one minute. Posts have no deck/subtitle or manual reading-time field.
 - **Analytics:** `BaseHead.astro` queues Google Analytics (`G-WGDCRBK3JG`) initialization on every page through the shared layout. The external script uses `defer` so it downloads in parallel and executes after HTML parsing and stylesheet loading, avoiding Analytics execution during initial page construction. Keep `defer` rather than `async` to preserve this order.
 - **Homepage sky:** the hero photograph is pinned to the viewport (`position: fixed`) and the page scrolls over it, so overscrolling past the top reveals more sky rather than a blank edge. Once the hero has scrolled out of view, the photograph is hidden and the root background takes `--c-footer`, so overscroll at the bottom matches the footer. Content below the hero sits in `.home-body` with an opaque canvas background. Daylight shows `hero-day.webp` and Evening fades `hero-night.webp` in over it (a 600ms crossfade, instant under reduced motion); both images are in the markup and the theme class decides which one is visible. The crop is set with `--hero-position` (`center 30%` on wide screens, `40% center` on narrow ones), and the night image can override it with `--hero-night-position` (`55% center` on narrow screens).
 - **Header:** the homepage uses `headerMode="after-hero"`; the wordmark appears and the header gains a canvas gradient (solid at the top, transparent at the bottom) only after the hero leaves the viewport. The gradient appears at once; the wordmark fades and drops 6px into place and the header text color eases over 400ms (instant under reduced motion). Navigation is Work and Blog plus the theme toggle; contact lives in the footer.

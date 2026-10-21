@@ -5,7 +5,8 @@ The Cerulean marketing site and blog, built with Astro and deployed as static as
 ## Design system
 
 Read [the Cerulean style reference](docs/design-system.md) for the visual language:
-Host Grotesk as the single typeface, real sky photography, color tokens, and composition
+Host Grotesk for brand typography, Geist for article reading text, real sky photography,
+color tokens, and composition
 patterns across websites, presentations, reports, posters, teaching materials, and print.
 Its [Website Adapter](docs/design-system.md#website-adapter) section maps those tokens to
 CSS and describes the homepage sky, header, and footer behavior.
@@ -46,9 +47,11 @@ title: "Post title"
 description: "A short summary used in listings and search metadata."
 pubDate: "2026-09-13"
 updatedDate: "2026-09-20" # optional
-author: "Cerulean" # optional; defaults to Cerulean
-readingTime: "4 min read" # optional; calculated from the Markdown when omitted
-deck: "An optional subtitle shown on the article page."
+author: # optional; defaults to Cerulean with a link to https://cerulean.works
+    - "Author name" # plain name, rendered without a link
+    - author: "Cerulean"
+      url: "https://cerulean.works"
+    - "et al" # optional special author; no URL needed
 draft: false # optional; drafts are only included during local development
 thumbnail:
     src: "/images/blog_thumbnails/post-slug.webp"
@@ -57,6 +60,22 @@ thumbnail:
 
 Write the post here in Markdown.
 ```
+
+Each author can be a plain name string, an object with `author` (their display name)
+and an optional `url` (their HTTP or HTTPS profile URL), or the special entry `"et al"`.
+Names with URLs link to their profiles; names without URLs render as plain text.
+`"et al"` appends “in collaboration with others at Cerulean”. The object form
+`{ author: "et al" }` is also supported. Without that entry, only the named authors
+appear. Reading time is always calculated from the post body at 200
+words per minute, rounded up to at least one minute; no frontmatter field is needed.
+Posts have no deck/subtitle field, and thumbnails are plain photographs with no text
+overlay or thumbnail title field.
+
+The homepage's Blogs section shows the three newest posts, and `/blog` lists every post, using
+the same flat text cards (`PostCard`). Each card shows the date and reading time, title,
+description, and authors with small avatars (an optional `avatar` per author, falling back to
+the GitHub picture for GitHub profile URLs). Cards are text-only; post thumbnails appear only
+in social metadata. On smaller screens, the cards form a single column.
 
 `src/content.config.ts` validates every post. `src/lib/blog.ts` is the shared source for draft
 filtering, newest-first sorting, URLs, dates, and reading time. The homepage, blog index, generated

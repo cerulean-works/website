@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { formatPostDate } from "../lib/blog";
+import PostAuthors from "../components/PostAuthors.astro";
 import BaseLayout from "./BaseLayout.astro";
 import "../styles/blog.css";
 
@@ -15,7 +16,6 @@ const {
     updatedDate,
     author,
     readingTime,
-    deck,
     thumbnail,
 } = Astro.props;
 const displayDate = formatPostDate(pubDate);
@@ -27,16 +27,17 @@ const displayDate = formatPostDate(pubDate);
     image={thumbnail.src}
     bodyClass="blog-page"
 >
+    <link
+        slot="head"
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Geist:ital,wght@0,100..900;1,100..900&display=swap"
+    />
     <main id="main-content" class="article-main reading-column">
-        <a class="back-link" href="/blog">
-            <span aria-hidden="true">←</span> All posts
-        </a>
         <article>
             <header class="article-header">
                 <h1 class="page-title">{title}</h1>
-                {deck && <p class="article-deck">{deck}</p>}
                 <div class="article-meta">
-                    <span>{author}</span>
+                    <PostAuthors authors={author} />
                     <time datetime={pubDate.toISOString()}>{displayDate}</time>
                     <span>{readingTime}</span>
                     {updatedDate && (
