@@ -36,15 +36,38 @@
     grid-area: 1 / 1;
     width: 20px;
     height: 20px;
+    transition:
+        opacity 400ms ease,
+        transform 400ms ease;
 }
 
 .theme-sun,
 .dark-theme .theme-moon {
-    display: none;
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
 }
 
 .dark-theme .theme-sun {
-    display: block;
+    opacity: 1;
+    transform: none;
+}
+
+/*
+ * The toggle sets this class for the length of a switch so every token-driven
+ * color eases with the hero crossfade instead of cutting at once.
+ */
+@media (prefers-reduced-motion: no-preference) {
+    .theme-transitioning,
+    .theme-transitioning *,
+    .theme-transitioning *::before,
+    .theme-transitioning *::after {
+        transition-property:
+            background-color, color, border-color, outline-color,
+            text-decoration-color, fill, stroke, opacity, transform !important;
+        transition-duration: 600ms !important;
+        transition-timing-function: ease !important;
+        transition-delay: 0s !important;
+    }
 }
 
 .theme-preview:hover {

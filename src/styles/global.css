@@ -108,17 +108,43 @@ a:hover {
     inset: 0 0 auto;
     background: transparent;
     color: var(--c-on-sky);
+    transition: color 400ms ease;
 }
 
 .js .site-header-wrap[data-header-mode="after-hero"].is-visible {
-    background: var(--c-paper);
     color: var(--c-ink);
+}
+
+/* Mask a solid fill so its color can transition with the page canvas. */
+.js .site-header-wrap[data-header-mode="after-hero"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--c-paper);
+    mask-image: linear-gradient(black 30%, 75%, transparent);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.js .site-header-wrap[data-header-mode="after-hero"].is-visible::before {
+    visibility: visible;
+}
+
+/* The brand eases in as the header settles instead of popping into place. */
+.js .site-header-wrap[data-header-mode="after-hero"] .wordmark {
+    transition:
+        opacity 400ms ease,
+        transform 400ms ease,
+        visibility 400ms;
 }
 
 .js
     .site-header-wrap[data-header-mode="after-hero"]:not(.is-visible)
     .wordmark {
     visibility: hidden;
+    opacity: 0;
+    transform: translateY(-2px);
 }
 
 .js
