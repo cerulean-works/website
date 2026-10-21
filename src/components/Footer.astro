@@ -1,3 +1,7 @@
+---
+import { ArrowUpRight } from "@lucide/astro";
+---
+
 <footer class="site-footer" id="contact">
     <div class="site-footer-inner container">
         <div class="footer-contact">
@@ -12,14 +16,28 @@
                 target="_blank"
                 rel="noopener noreferrer"
             >
-                GitHub <span aria-hidden="true">↗</span>
+                GitHub{" "}
+                <ArrowUpRight
+                    class="inline-icon"
+                    size="1em"
+                    stroke-width={1.5}
+                    aria-hidden="true"
+                    focusable="false"
+                />
             </a>
             <a
                 href="https://huggingface.co/cerulean-works"
                 target="_blank"
                 rel="noopener noreferrer"
             >
-                Hugging Face <span aria-hidden="true">↗</span>
+                Hugging Face{" "}
+                <ArrowUpRight
+                    class="inline-icon"
+                    size="1em"
+                    stroke-width={1.5}
+                    aria-hidden="true"
+                    focusable="false"
+                />
             </a>
         </nav>
     </div>

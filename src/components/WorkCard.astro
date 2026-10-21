@@ -1,4 +1,6 @@
 ---
+import { ArrowUpRight } from "@lucide/astro";
+
 interface Props {
     title: string;
     description?: string;
@@ -37,7 +39,17 @@ const Wrapper = href ? "a" : "div";
         />
         <h3>
             {title}
-            {href && <span aria-hidden="true"> ↗</span>}
+            {href && (
+                <span aria-hidden="true">
+                    <ArrowUpRight
+                        class="inline-icon"
+                        size="1em"
+                        stroke-width={1.5}
+                        aria-hidden="true"
+                        focusable="false"
+                    />
+                </span>
+            )}
         </h3>
         {description && <p>{description}</p>}
     </Wrapper>
