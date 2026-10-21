@@ -206,73 +206,94 @@
 
 .latest-posts {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 48px var(--c-grid-gap);
-    align-items: start;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* Shared rows keep dates, titles, descriptions, and authors aligned. */
+    grid-template-rows: auto minmax(140px, auto) auto auto;
+    gap: var(--c-grid-gap);
 }
 
+/* Flat panel: a tint of the canvas, square corners, no shadow. */
 .latest-post {
+    --avatar-ring: var(--c-panel);
+    position: relative;
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
     min-width: 0;
+    padding: 24px;
+    background: var(--avatar-ring);
 }
 
-.latest-post-featured {
-    grid-row: span 2;
-    padding-right: 48px;
+.latest-post:hover {
+    --avatar-ring: var(--c-panel-hover);
 }
 
-.latest-post-link {
-    display: block;
+.latest-post:has(.latest-post-link:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
 }
 
-.latest-post-link:hover {
-    text-decoration: none;
-}
-
-.latest-post-link:hover h3 {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.2em;
+.latest-post-date {
+    color: var(--c-muted);
+    font: 400 14px/1.5 var(--font-ui);
 }
 
 .latest-post h3 {
-    font: 400 26px/1.15 var(--font-editorial);
+    margin-top: 12px;
+    font: 400 clamp(24px, 2.2vw, 28px) / 1.2 var(--font-editorial);
     letter-spacing: -0.02em;
     overflow-wrap: anywhere;
 }
 
-.latest-post-featured h3 {
-    font-size: clamp(30px, 3vw, 38px);
+/* The title link covers the whole card; author links sit above it. */
+.latest-post-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.latest-post-link:hover,
+.latest-post-link:focus-visible {
+    text-decoration: none;
+    outline: none;
 }
 
 .latest-post-description {
-    margin-top: 12px;
+    margin-top: 48px;
     color: var(--c-muted);
-    font: 400 17px/1.45 var(--font-ui);
+    font: 300 15px/1.5 var(--font-ui);
 }
 
-.latest-post-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 20px;
-    margin-top: 20px;
-    color: var(--c-muted);
+.latest-post .post-authors {
+    margin-top: 16px;
+    color: var(--c-ink);
     font: 400 14px/1.5 var(--font-ui);
     overflow-wrap: anywhere;
 }
 
-.latest-post-meta .post-authors {
-    flex-basis: 100%;
+.latest-post .author-name {
+    font-weight: 500;
 }
 
-@media (max-width: 800px) {
+.latest-post .post-authors a {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 1000px) {
     .latest-posts {
         grid-template-columns: minmax(0, 1fr);
-        gap: 36px;
+        grid-template-rows: none;
     }
 
-    .latest-post-featured {
-        grid-row: auto;
-        padding-right: 0;
+    .latest-post {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .latest-post-description {
+        margin-top: 24px;
     }
 }
 
@@ -281,7 +302,7 @@
         margin-bottom: 24px;
     }
 
-    .latest-post h3 {
-        font-size: 32px;
+    .latest-post {
+        padding: 20px;
     }
 }

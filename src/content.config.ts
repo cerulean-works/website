@@ -7,6 +7,9 @@ const blogAuthor = z.preprocess(
     z.object({
         author: z.string().trim().min(1),
         url: z.url({ protocol: /^https?$/ }).optional(),
+        avatar: z
+            .union([z.string().startsWith("/"), z.url({ protocol: /^https$/ })])
+            .optional(),
     })
 );
 

@@ -71,10 +71,10 @@ words per minute, rounded up to at least one minute; no frontmatter field is nee
 Posts have no deck/subtitle field, and thumbnails are plain photographs with no text
 overlay or thumbnail title field.
 
-The homepage's Blogs section shows up to three posts in newest-first order: the latest
-post occupies the large left column, with the next two stacked on the right. The Blogs
-section is text-only, while the hero and Our work retain their photographs. Only the
-featured post shows its date, reading time, and authors on the homepage.
+The homepage's Blogs section shows up to three posts in newest-first order as three
+equal, flat text cards. Each card shows its date, title, description, and authors with small avatars (an optional
+`avatar` per author, falling back to the GitHub picture for GitHub profile URLs). The
+Blogs section is text-only, while the hero and Our work retain their photographs.
 Post thumbnails still appear on the blog index and in social metadata. On smaller
 screens, the posts form a single column. With fewer posts, it shows only the available
 entries.

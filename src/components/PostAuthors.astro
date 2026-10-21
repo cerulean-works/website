@@ -1,34 +1,117 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import LogoMark from "./LogoMark.astro";
 
 interface Props {
     authors: CollectionEntry<"blog">["data"]["author"];
+    avatars?: boolean;
+    /** Show two names at most, then "and N others", for tight spaces like cards. */
+    compact?: boolean;
 }
 
-const { authors } = Astro.props;
+const { authors, avatars = false, compact = false } = Astro.props;
 const namedAuthors = authors.filter((entry) => entry.author !== "et al");
 const hasEtAl = authors.some((entry) => entry.author === "et al");
+
+const shownAuthors = compact ? namedAuthors.slice(0, 2) : namedAuthors;
+const hiddenCount = namedAuthors.length - shownAuthors.length;
+const compactTail =
+    hiddenCount > 0
+        ? `${hiddenCount} ${hiddenCount === 1 ? "other" : "others"}`
+        : hasEtAl && shownAuthors.length > 0
+          ? "others"
+          : undefined;
+const nameCount = shownAuthors.length + (compact && compactTail ? 1 : 0);
+const separator = (index: number) =>
+    index === 0 ? "" : index === nameCount - 1 ? " and " : ", ";
+
+// A GitHub profile link doubles as the avatar source when none is given.
+function githubAvatar(url?: string) {
+    if (!url) return undefined;
+    const { hostname, pathname } = new URL(url);
+    const user = pathname.split("/").filter(Boolean);
+    if (hostname !== "github.com" || user.length !== 1) return undefined;
+    return `https://github.com/${user[0]}.png?size=64`;
+}
+
+function initials(name: string) {
+    return name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((word) => word[0]?.toUpperCase())
+        .join("");
+}
+
+// Cerulean itself and the "et al" credit use the mark; others fall back to initials.
+const faces = namedAuthors.map(({ author, url, avatar }) => ({
+    author,
+    src: avatar ?? githubAvatar(url),
+    mark: /cerulean/i.test(author),
+}));
+if (hasEtAl && !faces.some((face) => face.mark)) {
+    faces.push({ author: "Cerulean", src: undefined, mark: true });
+}
 ---
 
-<span class="post-authors">
-    {namedAuthors.map(({ author, url }, index) => (
-        <>
-            {index > 0 && (index === namedAuthors.length - 1 ? " and " : ", ")}
-            {url ? (
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                    {author}
-                </a>
-            ) : (
-                author
+<span class:list={["post-authors", { "post-authors-with-avatars": avatars }]}>
+    {avatars && (
+        <span class="author-avatars" aria-hidden="true">
+            {faces.map(({ author, src, mark }) =>
+                src ? (
+                    <img
+                        class="author-avatar"
+                        src={src}
+                        alt=""
+                        width="20"
+                        height="20"
+                        loading="lazy"
+                        decoding="async"
+                    />
+                ) : mark ? (
+                    <span class="author-avatar">
+                        <LogoMark />
+                    </span>
+                ) : (
+                    <span class="author-avatar author-initials">
+                        {initials(author)}
+                    </span>
+                )
             )}
-        </>
-    ))}
-    {hasEtAl && (
-        <>
-            {namedAuthors.length > 0 && " in collaboration with "}
-            others at Cerulean
-        </>
+        </span>
     )}
+    <span class="author-names">
+        {shownAuthors.map(({ author, url }, index) => (
+            <>
+                {separator(index)}
+                <span class="author-name">
+                    {url ? (
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                            {author}
+                        </a>
+                    ) : (
+                        author
+                    )}
+                </span>
+            </>
+        ))}
+        {compact ? (
+            compactTail ? (
+                <>
+                    {separator(shownAuthors.length)}
+                    {compactTail}
+                </>
+            ) : (
+                hasEtAl && "Others at Cerulean"
+            )
+        ) : (
+            hasEtAl && (
+                <>
+                    {namedAuthors.length > 0 && " in collaboration with "}
+                    others at Cerulean
+                </>
+            )
+        )}
+    </span>
 </span>
 
 <style>

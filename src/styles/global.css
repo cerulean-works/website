@@ -349,3 +349,50 @@ a:hover {
         color: CanvasText;
     }
 }
+
+/* Author avatars, opted into by PostAuthors' avatars prop. */
+.post-authors-with-avatars {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.author-avatars {
+    display: flex;
+    flex: none;
+    /* Centre the 20px faces on the first 21px line of names. */
+    margin-top: 0.5px;
+}
+
+.author-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--c-rule);
+    box-shadow: 0 0 0 2px var(--avatar-ring, var(--c-paper));
+    object-fit: cover;
+}
+
+.author-avatar + .author-avatar {
+    margin-left: -5px;
+}
+
+.author-initials {
+    color: var(--c-ink);
+    font: 500 8px/1 var(--font-ui);
+    letter-spacing: 0.02em;
+}
+
+.author-avatar .logo-mark {
+    width: 100%;
+    height: 100%;
+    vertical-align: top;
+}
+
+.author-names {
+    min-width: 0;
+}

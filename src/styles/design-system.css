@@ -11,6 +11,9 @@
     --c-focus: #1768af;
     --c-rule: #cdd3db;
     --c-selection: #cce7fb;
+    /* Flat panel tint for listing cards, derived so both themes follow. */
+    --c-panel: color-mix(in srgb, var(--c-ink) 4%, var(--c-paper));
+    --c-panel-hover: color-mix(in srgb, var(--c-ink) 7%, var(--c-paper));
     --font-editorial: "Host Grotesk", Arial, sans-serif;
     --font-ui: "Host Grotesk", Arial, sans-serif;
     --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -19,7 +22,7 @@
     --c-reading-max: 780px;
     --c-header-height: 80px;
     --c-section-space: 88px;
-    --c-grid-gap: 27px;
+    --c-grid-gap: 14px;
     --c-motion-duration: 220ms;
     --c-body-size: 25px;
     --c-body-leading: 1.5;
@@ -60,7 +63,7 @@
     :root {
         --c-gutter: 36px;
         --c-section-space: 72px;
-        --c-grid-gap: 22px;
+        --c-grid-gap: 11px;
         --c-body-size: 24px;
     }
 }
