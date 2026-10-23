@@ -1,12 +1,15 @@
 ---
+import type { MarkdownHeading } from "astro";
 import type { CollectionEntry } from "astro:content";
 import { formatPostDate } from "../lib/blog";
 import PostAuthors from "../components/PostAuthors.astro";
+import TableOfContents from "../components/TableOfContents.astro";
 import BaseLayout from "./BaseLayout.astro";
 import "../styles/blog.css";
 
 type Props = CollectionEntry<"blog">["data"] & {
     readingTime: string;
+    headings?: MarkdownHeading[];
 };
 
 const {
@@ -17,8 +20,11 @@ const {
     author,
     readingTime,
     thumbnail,
+    headings = [],
 } = Astro.props;
 const displayDate = formatPostDate(pubDate);
+// Short posts read fine without contents; longer ones get a rail.
+const showToc = headings.filter((heading) => heading.depth === 2).length >= 3;
 ---
 
 <BaseLayout
@@ -50,8 +56,11 @@ const displayDate = formatPostDate(pubDate);
                     )}
                 </div>
             </header>
-            <div class="article-body">
-                <slot />
+            <div class="article-content">
+                {showToc && <TableOfContents headings={headings} />}
+                <div class="article-body">
+                    <slot />
+                </div>
             </div>
         </article>
     </main>

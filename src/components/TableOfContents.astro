@@ -1,0 +1,205 @@
+---
+import type { MarkdownHeading } from "astro";
+import { ChevronDown } from "@lucide/astro";
+
+interface Props {
+    headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const entries = headings.filter((heading) => heading.depth <= 3);
+---
+
+{/* The rail and the inline block never show together, so only one is exposed. */}
+<nav class="toc-rail" aria-label="Contents">
+    <div class="toc-rail-inner">
+        <p class="toc-label">Contents</p>
+        <ol class="toc-list">
+            {entries.map((heading) => (
+                <li class:list={["toc-item", { "toc-sub": heading.depth === 3 }]}>
+                    <a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+                        {heading.text}
+                    </a>
+                </li>
+            ))}
+        </ol>
+    </div>
+</nav>
+
+<details class="toc-inline">
+    <summary>
+        Contents
+        <ChevronDown
+            class="inline-icon toc-chevron"
+            size="1em"
+            stroke-width={1.5}
+            aria-hidden="true"
+        />
+    </summary>
+    <nav aria-label="Contents">
+        <ol class="toc-list">
+            {entries.map((heading) => (
+                <li class:list={["toc-item", { "toc-sub": heading.depth === 3 }]}>
+                    <a href={`#${heading.slug}`} data-toc-link={heading.slug}>
+                        {heading.text}
+                    </a>
+                </li>
+            ))}
+        </ol>
+    </nav>
+</details>
+
+<script>
+    // Mark the section being read: the last heading above the reading line.
+    const links = [
+        ...document.querySelectorAll<HTMLAnchorElement>(".toc-rail [data-toc-link]"),
+    ];
+    const targets = links
+        .map((link) => document.getElementById(link.dataset.tocLink!))
+        .filter((el): el is HTMLElement => el !== null);
+
+    let frame = 0;
+    function update() {
+        frame = 0;
+        const line = window.innerHeight * 0.3;
+        let current = -1;
+        targets.forEach((target, index) => {
+            if (target.getBoundingClientRect().top <= line) current = index;
+        });
+        // At the bottom of the page, the last section is the one in view.
+        if (
+            window.innerHeight + window.scrollY >=
+            document.documentElement.scrollHeight - 2
+        ) {
+            current = targets.length - 1;
+        }
+        links.forEach((link, index) => {
+            if (index === current) link.setAttribute("aria-current", "location");
+            else link.removeAttribute("aria-current");
+        });
+    }
+
+    if (targets.length) {
+        const schedule = () => {
+            if (!frame) frame = requestAnimationFrame(update);
+        };
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", schedule);
+        update();
+    }
+
+    // Close the inline contents after a jump so the section is not covered.
+    document.querySelectorAll<HTMLDetailsElement>(".toc-inline").forEach((details) => {
+        details.addEventListener("click", (event) => {
+            if ((event.target as Element).closest("a")) details.open = false;
+        });
+    });
+</script>
+
+<style>
+    .toc-label,
+    .toc-inline summary {
+        color: var(--c-ink);
+        font: 500 14px/1.5 var(--font-ui);
+    }
+
+    .toc-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font: 400 14px/1.4 var(--font-ui);
+    }
+
+    .toc-list a {
+        display: block;
+        color: var(--c-muted);
+        text-decoration: none;
+        transition:
+            color var(--c-motion-duration) ease,
+            border-color var(--c-motion-duration) ease;
+    }
+
+    .toc-list a:hover,
+    .toc-list a[aria-current] {
+        color: var(--c-ink);
+    }
+
+    /* Wide screens: a quiet rail in the left margin that follows the reader. */
+    .toc-rail {
+        display: none;
+    }
+
+    @media (min-width: 1280px) {
+        .toc-rail {
+            display: block;
+            position: absolute;
+            inset: 0 auto 0 calc(-1 * (200px + 64px));
+            width: 200px;
+        }
+
+        .toc-rail-inner {
+            position: sticky;
+            top: calc(var(--c-header-height) + 40px);
+        }
+
+        .toc-rail .toc-label {
+            margin-bottom: 12px;
+        }
+
+        .toc-rail .toc-list a {
+            padding: 6px 0 6px 14px;
+            border-left: 1px solid var(--c-rule);
+        }
+
+        .toc-rail .toc-sub a {
+            padding-left: 28px;
+        }
+
+        .toc-rail .toc-list a[aria-current] {
+            border-left-color: var(--c-ink);
+        }
+
+        .toc-inline {
+            display: none;
+        }
+    }
+
+    /* Narrower screens: a collapsed block between the byline and the text. */
+    .toc-inline {
+        border-block: 1px solid var(--c-rule);
+    }
+
+    .toc-inline summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 48px;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .toc-inline summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .toc-chevron {
+        color: var(--c-muted);
+        transition: transform var(--c-motion-duration) ease;
+    }
+
+    .toc-inline[open] .toc-chevron {
+        transform: rotate(180deg);
+    }
+
+    .toc-inline .toc-list {
+        padding-bottom: 12px;
+    }
+
+    .toc-inline .toc-list a {
+        padding-block: 8px;
+    }
+
+    .toc-inline .toc-sub a {
+        padding-left: 16px;
+    }
+</style>
