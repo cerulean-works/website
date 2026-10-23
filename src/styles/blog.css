@@ -44,6 +44,14 @@
     margin-top: 16px;
 }
 
+.article-content {
+    position: relative;
+}
+
+.article-content > .toc-inline {
+    margin-top: 32px;
+}
+
 .article-body {
     margin-top: 48px;
     font: 400 18px/1.65 var(--font-reading);
