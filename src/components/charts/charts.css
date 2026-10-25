@@ -1,0 +1,297 @@
+/*
+ * Blog charts. The five hues pass the dataviz palette checks against each
+ * surface for every pair, not only neighbors, so scatter plots and crossing
+ * lines can use all five: Daylight on #fcfbf6, Evening on #10254b.
+ */
+.chart {
+    --chart-1: #2351de;
+    --chart-2: #a8261c;
+    --chart-3: #9a73cc;
+    --chart-4: #13876a;
+    --chart-5: #b88513;
+    --chart-surface: var(--c-paper);
+    --chart-label-width: 13.5rem;
+    margin-block: 40px;
+    font: 400 14px/1.4 var(--font-ui);
+}
+
+.dark-theme .chart {
+    --chart-1: #3265f3;
+    --chart-2: #c0482a;
+    --chart-3: #9752b4;
+    --chart-4: #11ae89;
+    --chart-5: #b58e48;
+}
+
+.chart-c1 { --chart-color: var(--chart-1); }
+.chart-c2 { --chart-color: var(--chart-2); }
+.chart-c3 { --chart-color: var(--chart-3); }
+.chart-c4 { --chart-color: var(--chart-4); }
+.chart-c5 { --chart-color: var(--chart-5); }
+
+.chart-title {
+    font: 500 16px/1.4 var(--font-ui);
+}
+
+.chart .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-top: 12px;
+    padding: 0;
+    list-style: none;
+    color: var(--c-muted);
+}
+
+.chart .chart-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.chart figcaption {
+    margin-top: 16px;
+}
+
+/* Marks: 10px, a 2px surface ring where they overlap, shape as a second channel. */
+.chart-mark {
+    position: absolute;
+    top: 50%;
+    box-sizing: border-box;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--chart-color);
+    border-radius: 50%;
+    background: var(--chart-color);
+    box-shadow: 0 0 0 2px var(--chart-surface);
+}
+
+.chart-ring {
+    background: var(--chart-surface);
+}
+
+.chart-square {
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+}
+
+.chart-diamond {
+    width: 9px;
+    height: 9px;
+    border-radius: 1px;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.chart-triangle {
+    width: 12px;
+    height: 11px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+:is(.chart-legend, .chart-tip) .chart-mark {
+    position: static;
+    flex: none;
+    transform: none;
+}
+
+:is(.chart-legend, .chart-tip) .chart-diamond {
+    transform: rotate(45deg);
+}
+
+.chart-swatch-line {
+    flex: none;
+    width: 18px;
+    height: 0;
+    border-top: 2px solid var(--chart-color);
+}
+
+.chart-swatch-line.chart-dashed {
+    border-top-style: dashed;
+}
+
+/* Tooltips: shown on hover, focus or tap; values use text colors, not series colors. */
+.chart-tip {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    gap: 4px;
+    min-width: 200px;
+    padding: 10px 12px;
+    border: 1px solid var(--c-rule);
+    background: var(--c-paper);
+    color: var(--c-ink);
+    font: 400 14px/1.4 var(--font-ui);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+}
+
+.chart-tip strong {
+    font-weight: 500;
+}
+
+.chart-tip-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--c-muted);
+}
+
+.chart-tip-value {
+    margin-left: auto;
+    padding-left: 12px;
+    color: var(--c-ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Row charts (dot plots, bar charts): an HTML label beside each track. */
+.chart-rows {
+    margin-top: 20px;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: var(--chart-label-width) minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    min-height: 28px;
+    outline: none;
+}
+
+.chart-row-tagged {
+    background: var(--c-panel);
+}
+
+.chart-row-tagged .chart-mark {
+    --chart-surface: var(--c-panel);
+}
+
+.chart-row-label {
+    min-width: 0;
+    padding-left: 4px;
+    color: var(--c-muted);
+}
+
+.chart-row:not(.chart-axis):is(:hover, :focus) .chart-row-label {
+    color: var(--c-ink);
+}
+
+.chart-row-tag {
+    margin-left: 6px;
+    color: var(--c-ink);
+    font-weight: 500;
+}
+
+.chart-track {
+    position: relative;
+    height: 28px;
+    margin-right: 12px;
+}
+
+.chart-row .chart-tip {
+    right: 0;
+    bottom: calc(100% + 4px);
+}
+
+.chart-row:is(:hover, :focus) .chart-tip {
+    opacity: 1;
+}
+
+.chart-grid {
+    position: absolute;
+    inset-block: 0;
+    width: 1px;
+    background: var(--c-rule);
+}
+
+.chart-grid-zero {
+    background: var(--c-muted);
+}
+
+.chart-band {
+    position: absolute;
+    inset-block: 0;
+    background: var(--c-panel-hover, var(--c-panel));
+}
+
+.chart-axis .chart-track {
+    height: 20px;
+}
+
+.chart-tick {
+    position: absolute;
+    top: 2px;
+    transform: translateX(-50%);
+    color: var(--c-muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.chart-axis-label {
+    min-height: 0;
+    color: var(--c-muted);
+    font-size: 13px;
+}
+
+/* The data table behind every chart. */
+.chart-data {
+    margin-top: 12px;
+    color: var(--c-muted);
+}
+
+.chart-data summary {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.chart-data-scroll {
+    overflow-x: auto;
+}
+
+.chart-data table {
+    margin-top: 12px;
+    color: var(--c-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.chart-data :is(th, td) {
+    white-space: nowrap;
+}
+
+.chart-data th[scope="row"] {
+    font-weight: 400;
+}
+
+@media (max-width: 600px) {
+    .chart-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .chart-row:not(.chart-axis):not(.chart-axis-label) {
+        padding-top: 6px;
+    }
+
+    .chart-axis .chart-row-label,
+    .chart-axis-label .chart-row-label {
+        display: none;
+    }
+
+    .chart-track {
+        margin-inline: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chart-tip {
+        transition: none;
+    }
+}

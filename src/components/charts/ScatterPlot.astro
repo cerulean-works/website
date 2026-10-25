@@ -1,0 +1,279 @@
+---
+/**
+ * Scatter plots as small multiples: panels share a legend and axis labels but
+ * keep their own scales. Points are HTML marks with a larger hit area; hovering
+ * or focusing one shows its values.
+ */
+import ChartFrame from "./ChartFrame.astro";
+import {
+    formatTick,
+    formatValue,
+    markClasses,
+    percentOf,
+    scale,
+    type ChartFormat,
+    type ChartSeries,
+} from "./chart";
+
+export interface ScatterPoint {
+    series: string;
+    x: number;
+    y: number;
+    /** Names the point in its tooltip, such as a run name. */
+    label?: string;
+}
+
+export interface ScatterPanel {
+    title: string;
+    points: ScatterPoint[];
+    xDomain: [number, number];
+    xTicks: number[];
+    yDomain: [number, number];
+    yTicks: number[];
+}
+
+interface Props {
+    title: string;
+    caption?: string;
+    series: ChartSeries[];
+    panels: ScatterPanel[];
+    xLabel: string;
+    yLabel: string;
+    xFormat: ChartFormat;
+    yFormat: ChartFormat;
+}
+
+const { title, caption, series, panels, xLabel, yLabel, xFormat, yFormat } =
+    Astro.props;
+const seriesByKey = new Map(series.map((entry) => [entry.key, entry]));
+
+const table = {
+    head: ["Panel", "Series", xLabel, yLabel],
+    rows: panels.flatMap((panel) =>
+        panel.points.map((point) => [
+            panel.title,
+            [seriesByKey.get(point.series)!.label, point.label]
+                .filter(Boolean)
+                .join(", "),
+            formatValue(point.x, xFormat),
+            formatValue(point.y, yFormat),
+        ])
+    ),
+};
+---
+
+<ChartFrame title={title} caption={caption} series={series} table={table}>
+    <div class="scatter-panels" style={{ "--scatter-columns": Math.min(panels.length, 3) }}>
+        {panels.map((panel) => {
+            const left = percentOf(panel.xDomain);
+            const toX = scale(panel.xDomain);
+            // Anchor tooltips toward the middle so they stay inside the panel.
+            const tipSide = (x: number) =>
+                toX(x) > 60 ? "scatter-tip-end" : toX(x) < 40 ? "scatter-tip-start" : undefined;
+            const bottom = percentOf(panel.yDomain);
+            return (
+                <div class="scatter-panel">
+                    <p class="scatter-panel-title">{panel.title}</p>
+                    <p class="scatter-y-label">{yLabel}</p>
+                    <div class="scatter-body">
+                        <div class="scatter-y-ticks" aria-hidden="true">
+                            {panel.yTicks.map((tick) => (
+                                <span style={{ bottom: bottom(tick) }}>
+                                    {formatTick(tick, yFormat)}
+                                </span>
+                            ))}
+                        </div>
+                        <div class="scatter-plot">
+                            {panel.yTicks.map((tick) => (
+                                <span class="scatter-grid-y" style={{ bottom: bottom(tick) }} />
+                            ))}
+                            {panel.xTicks.map((tick) => (
+                                <span class="scatter-grid-x" style={{ left: left(tick) }} />
+                            ))}
+                            {panel.points.map((point) => {
+                                const entry = seriesByKey.get(point.series)!;
+                                return (
+                                    <span
+                                        class:list={["scatter-point", tipSide(point.x)]}
+                                        style={{ left: left(point.x), bottom: bottom(point.y) }}
+                                        tabindex="0"
+                                        aria-label={`${entry.label}${point.label ? `, ${point.label}` : ""}: ${xLabel} ${formatValue(point.x, xFormat)}, ${yLabel} ${formatValue(point.y, yFormat)}`}
+                                    >
+                                        <span class:list={markClasses(entry)} />
+                                        <span class="chart-tip" aria-hidden="true">
+                                            <strong>
+                                                {entry.label}
+                                                {point.label && `, ${point.label}`}
+                                            </strong>
+                                            <span class="chart-tip-line">
+                                                {xLabel}
+                                                <span class="chart-tip-value">
+                                                    {formatValue(point.x, xFormat)}
+                                                </span>
+                                            </span>
+                                            <span class="chart-tip-line">
+                                                {yLabel}
+                                                <span class="chart-tip-value">
+                                                    {formatValue(point.y, yFormat)}
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        <span />
+                        <div class="scatter-x-ticks" aria-hidden="true">
+                            {panel.xTicks.map((tick) => (
+                                <span style={{ left: left(tick) }}>
+                                    {formatTick(tick, xFormat)}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                    <p class="scatter-x-label">{xLabel}</p>
+                </div>
+            );
+        })}
+    </div>
+</ChartFrame>
+
+<style>
+    .scatter-panels {
+        display: grid;
+        grid-template-columns: repeat(var(--scatter-columns), minmax(0, 1fr));
+        gap: 28px 24px;
+        margin-top: 20px;
+    }
+
+    .scatter-panel-title {
+        font-weight: 500;
+    }
+
+    .scatter-y-label,
+    .scatter-x-label {
+        color: var(--c-muted);
+        font-size: 13px;
+    }
+
+    .scatter-y-label {
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+
+    .scatter-x-label {
+        margin-top: 4px;
+        text-align: center;
+    }
+
+    .scatter-body {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 8px;
+    }
+
+    .scatter-y-ticks {
+        position: relative;
+        min-width: 2.5em;
+    }
+
+    .scatter-y-ticks span {
+        position: absolute;
+        right: 0;
+        transform: translateY(50%);
+        color: var(--c-muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .scatter-plot {
+        position: relative;
+        aspect-ratio: 5 / 4;
+        margin-right: 8px;
+        border-bottom: 1px solid var(--c-muted);
+        border-left: 1px solid var(--c-muted);
+    }
+
+    .scatter-grid-y,
+    .scatter-grid-x {
+        position: absolute;
+        background: var(--c-rule);
+    }
+
+    .scatter-grid-y {
+        inset-inline: 0;
+        height: 1px;
+    }
+
+    .scatter-grid-x {
+        inset-block: 0;
+        width: 1px;
+    }
+
+    /* A 20px hit area around each 10px mark. */
+    .scatter-point {
+        position: absolute;
+        z-index: 1;
+        width: 20px;
+        height: 20px;
+        transform: translate(-50%, 50%);
+        outline: none;
+    }
+
+    .scatter-point .chart-mark {
+        left: 50%;
+    }
+
+    .scatter-point:is(:hover, :focus-visible) {
+        z-index: 3;
+    }
+
+    .scatter-point:focus-visible .chart-mark {
+        outline: 2px solid var(--c-focus);
+        outline-offset: 3px;
+    }
+
+    .scatter-point .chart-tip {
+        bottom: calc(100% + 4px);
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .scatter-tip-start .chart-tip {
+        left: 0;
+        transform: none;
+    }
+
+    .scatter-tip-end .chart-tip {
+        right: 0;
+        left: auto;
+        transform: none;
+    }
+
+    .scatter-point:is(:hover, :focus-visible) .chart-tip {
+        opacity: 1;
+    }
+
+    .scatter-x-ticks {
+        position: relative;
+        height: 22px;
+        margin-right: 8px;
+    }
+
+    .scatter-x-ticks span {
+        position: absolute;
+        top: 6px;
+        transform: translateX(-50%);
+        color: var(--c-muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+        .scatter-panels {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>

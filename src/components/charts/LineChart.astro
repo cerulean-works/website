@@ -1,0 +1,395 @@
+---
+/**
+ * Lines over a shared x axis, such as a metric over training steps. The plot
+ * is an SVG stretched to the box with 2px non-scaling strokes; ticks and labels
+ * are HTML so they stay legible at any width. Hovering, tapping or using the
+ * arrow keys moves a crosshair with every series' value.
+ */
+import ChartFrame from "./ChartFrame.astro";
+import {
+    formatTick,
+    formatValue,
+    scale,
+    type ChartFormat,
+    type ChartSeries,
+} from "./chart";
+
+export interface LineSeries extends ChartSeries {
+    /** One value per x; null leaves a gap. */
+    values: (number | null)[];
+}
+
+interface Props {
+    title: string;
+    caption?: string;
+    series: LineSeries[];
+    x: number[];
+    xDomain?: [number, number];
+    xTicks: number[];
+    xLabel: string;
+    /** Number of decimals for x in tooltips and the table. */
+    xFormat?: ChartFormat;
+    yDomain: [number, number];
+    yTicks: number[];
+    yLabel: string;
+    format: ChartFormat;
+    /** Vertical reference lines, such as the start of the decay. */
+    markers?: { x: number; label: string }[];
+    /** Plot height in px. */
+    height?: number;
+    /** Table rows: every nth x. Defaults to about a dozen rows. */
+    tableEvery?: number;
+}
+
+const {
+    title,
+    caption,
+    series,
+    x,
+    xDomain = [x[0], x[x.length - 1]],
+    xTicks,
+    xLabel,
+    xFormat = 0,
+    yDomain,
+    yTicks,
+    yLabel,
+    format,
+    markers = [],
+    height = 260,
+    tableEvery = Math.max(1, Math.ceil(x.length / 12)),
+} = Astro.props;
+
+const toX = scale(xDomain);
+const toY = scale(yDomain);
+const pct = (value: number) => `${value.toFixed(2)}%`;
+
+// Split each series at nulls so gaps stay gaps; coordinates are 0–1000.
+function segments(values: (number | null)[]) {
+    const runs: string[] = [];
+    let run: string[] = [];
+    values.forEach((value, index) => {
+        if (value === null) {
+            if (run.length) runs.push(run.join(" "));
+            run = [];
+            return;
+        }
+        run.push(
+            `${(toX(x[index]) * 10).toFixed(1)},${(1000 - toY(value) * 10).toFixed(1)}`
+        );
+    });
+    if (run.length) runs.push(run.join(" "));
+    return runs;
+}
+
+const table = {
+    head: [xLabel, ...series.map((entry) => entry.label)],
+    rows: x
+        .map((value, index) => ({ value, index }))
+        .filter(({ index }) => index % tableEvery === 0 || index === x.length - 1)
+        .map(({ value, index }) => [
+            formatValue(value, xFormat),
+            ...series.map((entry) => {
+                const y = entry.values[index];
+                return y === null ? "—" : formatValue(y, format);
+            }),
+        ]),
+};
+
+const payload = JSON.stringify({
+    x: x.map((value) => toX(value)),
+    xText: x.map((value) => formatValue(value, xFormat)),
+    xLabel,
+    series: series.map((entry) => ({
+        label: entry.label,
+        color: entry.color,
+        y: entry.values.map((value) => (value === null ? null : toY(value))),
+        text: entry.values.map((value) =>
+            value === null ? "—" : formatValue(value, format)
+        ),
+    })),
+});
+const crossesZero = yDomain[0] < 0 && yDomain[1] > 0;
+---
+
+<ChartFrame title={title} caption={caption} series={series} legend="line" table={table}>
+    <div class="line-chart" data-line-chart={payload}>
+        <p class="line-y-label">{yLabel}</p>
+        <div class="line-body">
+            <div class="line-y-ticks" aria-hidden="true" style={{ height: `${height}px` }}>
+                {yTicks.map((tick) => (
+                    <span style={{ bottom: pct(toY(tick)) }}>{formatTick(tick, format)}</span>
+                ))}
+            </div>
+            <div
+                class="line-plot"
+                style={{ height: `${height}px` }}
+                tabindex="0"
+                role="img"
+                aria-label={`${title}. Use the left and right arrow keys to read values.`}
+            >
+                {yTicks.map((tick) => (
+                    <span
+                        class:list={["line-grid", { "line-grid-zero": crossesZero && tick === 0 }]}
+                        style={{ bottom: pct(toY(tick)) }}
+                    />
+                ))}
+                {markers.map((marker) => (
+                    <span class="line-marker" style={{ left: pct(toX(marker.x)) }}>
+                        <span class="line-marker-label">{marker.label}</span>
+                    </span>
+                ))}
+                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+                    {series.map((entry) =>
+                        segments(entry.values).map((points) => (
+                            <polyline
+                                class:list={[`chart-c${entry.color}`, { "line-dashed": entry.dashed }]}
+                                points={points}
+                            />
+                        ))
+                    )}
+                </svg>
+                <span class="line-crosshair" aria-hidden="true" />
+                {series.map((entry) => (
+                    <span
+                        class:list={["chart-mark", "chart-dot", `chart-c${entry.color}`, "line-point"]}
+                        aria-hidden="true"
+                    />
+                ))}
+                <span class="chart-tip line-tip" aria-live="polite" />
+            </div>
+            <span />
+            <div class="line-x-ticks" aria-hidden="true">
+                {xTicks.map((tick) => (
+                    <span style={{ left: pct(toX(tick)) }}>{formatTick(tick, xFormat)}</span>
+                ))}
+            </div>
+            <span />
+            <p class="chart-axis-label">{xLabel}</p>
+        </div>
+    </div>
+</ChartFrame>
+
+<script>
+    interface Payload {
+        x: number[];
+        xText: string[];
+        xLabel: string;
+        series: { label: string; color: number; y: (number | null)[]; text: string[] }[];
+    }
+
+    function nearest(xs: number[], target: number) {
+        let best = 0;
+        xs.forEach((value, index) => {
+            if (Math.abs(value - target) < Math.abs(xs[best] - target)) best = index;
+        });
+        return best;
+    }
+
+    for (const chart of document.querySelectorAll<HTMLElement>("[data-line-chart]")) {
+        const data: Payload = JSON.parse(chart.dataset.lineChart!);
+        const plot = chart.querySelector<HTMLElement>(".line-plot")!;
+        const crosshair = plot.querySelector<HTMLElement>(".line-crosshair")!;
+        const points = [...plot.querySelectorAll<HTMLElement>(".line-point")];
+        const tip = plot.querySelector<HTMLElement>(".line-tip")!;
+        let current = -1;
+
+        function show(index: number) {
+            current = index;
+            const left = data.x[index];
+            plot.classList.add("is-active");
+            crosshair.style.left = `${left}%`;
+            data.series.forEach((entry, i) => {
+                const y = entry.y[index];
+                points[i].hidden = y === null;
+                points[i].style.left = `${left}%`;
+                if (y !== null) points[i].style.top = `${100 - y}%`;
+            });
+            // List series top to bottom, matching their order on the plot.
+            const rows = data.series
+                .map((entry, i) => ({ entry, y: entry.y[index] ?? -Infinity, i }))
+                .sort((a, b) => b.y - a.y);
+            tip.replaceChildren();
+            const heading = document.createElement("strong");
+            heading.textContent = `${data.xLabel} ${data.xText[index]}`;
+            tip.append(heading);
+            for (const { entry } of rows) {
+                const line = document.createElement("span");
+                line.className = "chart-tip-line";
+                const mark = document.createElement("span");
+                mark.className = `chart-swatch-line chart-c${entry.color}`;
+                const label = document.createElement("span");
+                label.textContent = entry.label;
+                const value = document.createElement("span");
+                value.className = "chart-tip-value";
+                value.textContent = entry.text[index];
+                line.append(mark, label, value);
+                tip.append(line);
+            }
+            tip.classList.toggle("line-tip-left", left > 55);
+            tip.style.left = `${left}%`;
+        }
+
+        function hide() {
+            plot.classList.remove("is-active");
+        }
+
+        plot.addEventListener("pointermove", (event) => {
+            const box = plot.getBoundingClientRect();
+            show(nearest(data.x, ((event.clientX - box.left) / box.width) * 100));
+        });
+        plot.addEventListener("pointerleave", (event) => {
+            if (event.pointerType === "mouse") hide();
+        });
+        plot.addEventListener("blur", hide);
+        plot.addEventListener("keydown", (event) => {
+            const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+            if (step === undefined) return;
+            event.preventDefault();
+            const start = current < 0 ? (step > 0 ? -1 : data.x.length) : current;
+            show(Math.min(Math.max(start + step, 0), data.x.length - 1));
+        });
+    }
+</script>
+
+<style>
+    .line-chart {
+        margin-top: 20px;
+    }
+
+    .line-y-label {
+        margin-bottom: 8px;
+        color: var(--c-muted);
+        font-size: 13px;
+    }
+
+    .line-body {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 10px;
+    }
+
+    .line-y-ticks {
+        position: relative;
+        min-width: 2.5em;
+    }
+
+    .line-y-ticks span {
+        position: absolute;
+        right: 0;
+        transform: translateY(50%);
+        color: var(--c-muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .line-plot {
+        position: relative;
+        margin-right: 12px;
+        outline: none;
+        touch-action: pan-y;
+    }
+
+    .line-plot:focus-visible {
+        outline: 2px solid var(--c-focus);
+        outline-offset: 4px;
+    }
+
+    .line-grid {
+        position: absolute;
+        inset-inline: 0;
+        height: 1px;
+        background: var(--c-rule);
+    }
+
+    .line-grid-zero {
+        background: var(--c-muted);
+    }
+
+    .line-marker {
+        position: absolute;
+        inset-block: 0;
+        border-left: 1px dashed var(--c-muted);
+    }
+
+    .line-marker-label {
+        position: absolute;
+        top: 0;
+        right: 6px;
+        color: var(--c-muted);
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+    }
+
+    polyline {
+        fill: none;
+        stroke: var(--chart-color);
+        stroke-width: 2px;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .line-dashed {
+        stroke-dasharray: 6 4;
+    }
+
+    .line-crosshair {
+        position: absolute;
+        inset-block: 0;
+        width: 1px;
+        background: var(--c-muted);
+        opacity: 0;
+    }
+
+    .line-point {
+        opacity: 0;
+    }
+
+    .line-tip {
+        top: 0;
+        transform: translateX(16px);
+    }
+
+    .line-tip.line-tip-left {
+        transform: translateX(calc(-100% - 16px));
+    }
+
+    .is-active :is(.line-crosshair, .line-point, .line-tip) {
+        opacity: 1;
+    }
+
+    .line-x-ticks {
+        position: relative;
+        height: 22px;
+        margin-right: 12px;
+    }
+
+    .line-x-ticks span {
+        position: absolute;
+        top: 6px;
+        transform: translateX(-50%);
+        color: var(--c-muted);
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .chart-axis-label {
+        margin-top: 4px;
+    }
+
+    @media (max-width: 600px) {
+        .line-tip {
+            min-width: 170px;
+        }
+    }
+</style>
