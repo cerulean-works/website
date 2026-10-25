@@ -35,6 +35,7 @@ export function formatPostDate(date: Date) {
 export function getReadingTime(post: BlogPost) {
     const plainText = (post.body ?? "")
         .replace(/```[\s\S]*?```/g, " ")
+        .replace(/^(?:import|export)\s.*$/gm, " ")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
         .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
         .replace(/<[^>]+>/g, " ")

@@ -1,0 +1,163 @@
+---
+/**
+ * Grouped horizontal bars: one row per category, one thin bar per series,
+ * drawn from zero so signed values read as polarity. Shares the row layout,
+ * tooltip and data table with DotPlot.
+ */
+import ChartFrame from "./ChartFrame.astro";
+import {
+    formatTick,
+    formatValue,
+    markClasses,
+    percentOf,
+    type ChartFormat,
+    type ChartSeries,
+} from "./chart";
+
+export interface BarRow {
+    label: string;
+    /** Values keyed by series; a missing key leaves a gap in the group. */
+    values: Record<string, number | undefined>;
+}
+
+interface Props {
+    title: string;
+    caption?: string;
+    series: ChartSeries[];
+    rows: BarRow[];
+    domain: [number, number];
+    ticks: number[];
+    format: ChartFormat;
+    axisLabel: string;
+    rowHeader: string;
+}
+
+const { title, caption, series, rows, domain, ticks, format, axisLabel, rowHeader } =
+    Astro.props;
+
+const position = percentOf(domain);
+const zero = Math.min(Math.max(0, domain[0]), domain[1]);
+const table = {
+    head: [rowHeader, ...series.map((entry) => entry.label)],
+    rows: rows.map((row) => [
+        row.label,
+        ...series.map(({ key }) => {
+            const value = row.values[key];
+            return value === undefined ? "—" : formatValue(value, format);
+        }),
+    ]),
+};
+// Each bar is 6px with a 2px gap, so the track grows with the series count.
+const trackHeight = Math.max(28, series.length * 8 + 8);
+---
+
+<ChartFrame title={title} caption={caption} series={series} table={table}>
+    <div class="chart-rows" aria-hidden="true" style={{ "--bar-track": `${trackHeight}px` }}>
+        {rows.map((row) => (
+            <div class="chart-row bar-row" tabindex="-1">
+                <span class="chart-row-label">{row.label}</span>
+                <span class="chart-track">
+                    {ticks.map((tick) => (
+                        <span
+                            class:list={["chart-grid", { "chart-grid-zero": tick === zero }]}
+                            style={{ left: position(tick) }}
+                        />
+                    ))}
+                    <span class="bar-group">
+                        {series.map((entry) => {
+                            const value = row.values[entry.key];
+                            if (value === undefined) return <span class="bar-slot" />;
+                            const [from, to] = value < zero ? [value, zero] : [zero, value];
+                            return (
+                                <span class="bar-slot">
+                                    <span
+                                        class:list={[
+                                            "bar",
+                                            `chart-c${entry.color}`,
+                                            value < zero ? "bar-negative" : "bar-positive",
+                                        ]}
+                                        style={{
+                                            left: position(from),
+                                            right: `calc(100% - ${position(to)})`,
+                                        }}
+                                    />
+                                </span>
+                            );
+                        })}
+                    </span>
+                    <span class="chart-tip">
+                        <strong>{row.label}</strong>
+                        {series.map((entry) => {
+                            const value = row.values[entry.key];
+                            return (
+                                value !== undefined && (
+                                    <span class="chart-tip-line">
+                                        <span class:list={markClasses({ ...entry, shape: "square" })} />
+                                        <span>{entry.label}</span>
+                                        <span class="chart-tip-value">
+                                            {formatValue(value, format)}
+                                        </span>
+                                    </span>
+                                )
+                            );
+                        })}
+                    </span>
+                </span>
+            </div>
+        ))}
+        <div class="chart-row chart-axis">
+            <span class="chart-row-label" />
+            <span class="chart-track">
+                {ticks.map((tick) => (
+                    <span class="chart-tick" style={{ left: position(tick) }}>
+                        {formatTick(tick, format)}
+                    </span>
+                ))}
+            </span>
+        </div>
+        <div class="chart-row chart-axis-label">
+            <span class="chart-row-label" />
+            <span>{axisLabel}</span>
+        </div>
+    </div>
+</ChartFrame>
+
+<style>
+    .bar-row .chart-track {
+        height: var(--bar-track);
+    }
+
+    .bar-row + .bar-row {
+        margin-top: 4px;
+    }
+
+    .bar-group {
+        position: absolute;
+        inset: 4px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+    }
+
+    .bar-slot {
+        position: relative;
+        height: 6px;
+    }
+
+    .bar {
+        position: absolute;
+        inset-block: 0;
+        min-width: 1px;
+        background: var(--chart-color);
+    }
+
+    /* Round only the data end; the zero end stays square on the baseline. */
+    .bar-positive {
+        border-radius: 0 3px 3px 0;
+    }
+
+    .bar-negative {
+        border-radius: 3px 0 0 3px;
+    }
+</style>
