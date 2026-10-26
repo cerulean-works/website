@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import LogoMark from "./LogoMark.astro";
+import { getAuthorInitials, getGithubUser } from "../lib/blog";
 
 interface Props {
     authors: CollectionEntry<"blog">["data"]["author"];
@@ -25,27 +26,13 @@ const nameCount = shownAuthors.length + (compact && compactTail ? 1 : 0);
 const separator = (index: number) =>
     index === 0 ? "" : index === nameCount - 1 ? " and " : ", ";
 
-// A GitHub profile link doubles as the avatar source when none is given.
-function githubAvatar(url?: string) {
-    if (!url) return undefined;
-    const { hostname, pathname } = new URL(url);
-    const user = pathname.split("/").filter(Boolean);
-    if (hostname !== "github.com" || user.length !== 1) return undefined;
-    return `https://github.com/${user[0]}.png?size=64`;
-}
-
-function initials(name: string) {
-    return name
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((word) => word[0]?.toUpperCase())
-        .join("");
-}
+const githubAvatar = (user?: string) =>
+    user && `https://github.com/${user}.png?size=64`;
 
 // Cerulean itself and the "et al" credit use the mark; others fall back to initials.
 const faces = namedAuthors.map(({ author, url, avatar }) => ({
     author,
-    src: avatar ?? githubAvatar(url),
+    src: avatar ?? githubAvatar(getGithubUser(url)),
     mark: /cerulean/i.test(author),
 }));
 if (hasEtAl && !faces.some((face) => face.mark)) {
@@ -73,7 +60,7 @@ if (hasEtAl && !faces.some((face) => face.mark)) {
                     </span>
                 ) : (
                     <span class="author-avatar author-initials">
-                        {initials(author)}
+                        {getAuthorInitials(author)}
                     </span>
                 )
             )}

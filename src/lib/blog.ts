@@ -44,3 +44,20 @@ export function getReadingTime(post: BlogPost) {
 
     return `${Math.max(1, Math.ceil(words / 200))} min read`;
 }
+
+/** The username when `url` is a GitHub profile link, else undefined. */
+export function getGithubUser(url?: string) {
+    if (!url) return undefined;
+    const { hostname, pathname } = new URL(url);
+    const segments = pathname.split("/").filter(Boolean);
+    if (hostname !== "github.com" || segments.length !== 1) return undefined;
+    return segments[0];
+}
+
+export function getAuthorInitials(name: string) {
+    return name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((word) => word[0]?.toUpperCase())
+        .join("");
+}

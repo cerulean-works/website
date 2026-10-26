@@ -2,7 +2,7 @@
 import type { MarkdownHeading } from "astro";
 import type { CollectionEntry } from "astro:content";
 import { formatPostDate } from "../lib/blog";
-import PostAuthors from "../components/PostAuthors.astro";
+import AuthorRows from "../components/AuthorRows.astro";
 import TableOfContents from "../components/TableOfContents.astro";
 import BaseLayout from "./BaseLayout.astro";
 import "../styles/blog.css";
@@ -42,8 +42,8 @@ const showToc = headings.filter((heading) => heading.depth === 2).length >= 3;
         <article>
             <header class="article-header">
                 <h1 class="page-title">{title}</h1>
+                <AuthorRows authors={author} />
                 <div class="article-meta">
-                    <PostAuthors authors={author} />
                     <time datetime={pubDate.toISOString()}>{displayDate}</time>
                     <span>{readingTime}</span>
                     {updatedDate && (
