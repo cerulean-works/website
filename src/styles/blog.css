@@ -40,6 +40,10 @@
     overflow-wrap: anywhere;
 }
 
+.article-header .author-rows {
+    margin-top: 24px;
+}
+
 .article-meta {
     margin-top: 16px;
 }

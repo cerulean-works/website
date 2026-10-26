@@ -1,0 +1,143 @@
+---
+import type { CollectionEntry } from "astro:content";
+import LogoMark from "./LogoMark.astro";
+import { getAuthorInitials, getGithubUser } from "../lib/blog";
+
+interface Props {
+    authors: CollectionEntry<"blog">["data"]["author"];
+}
+
+const { authors } = Astro.props;
+const namedAuthors = authors.filter((entry) => entry.author !== "et al");
+const hasEtAl = authors.some((entry) => entry.author === "et al");
+
+const rows = namedAuthors.map(({ author, url, avatar }) => {
+    const github = getGithubUser(url);
+    return {
+        author,
+        url,
+        github,
+        src: avatar ?? (github && `https://github.com/${github}.png?size=64`),
+        mark: /cerulean/i.test(author),
+    };
+});
+---
+
+<ul class="author-rows" aria-label="Authors">
+    {rows.map(({ author, url, github, src, mark }) => {
+        const Row = url ? "a" : "span";
+        return (
+            <li>
+                <Row
+                    class="author-row"
+                    {...(url && {
+                        href: url,
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                    })}
+                >
+                    {src ? (
+                        <img
+                            class="author-avatar"
+                            src={src}
+                            alt=""
+                            width="24"
+                            height="24"
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    ) : mark ? (
+                        <span class="author-avatar" aria-hidden="true">
+                            <LogoMark />
+                        </span>
+                    ) : (
+                        <span
+                            class="author-avatar author-initials"
+                            aria-hidden="true"
+                        >
+                            {getAuthorInitials(author)}
+                        </span>
+                    )}
+                    <span class="author-row-name">{author}</span>
+                    {github && (
+                        <>
+                            <span class="author-row-rule" aria-hidden="true" />
+                            <span class="author-row-handle">@{github}</span>
+                        </>
+                    )}
+                </Row>
+            </li>
+        );
+    })}
+    {hasEtAl && (
+        <li>
+            <span class="author-row">
+                <span class="author-avatar" aria-hidden="true">
+                    <LogoMark />
+                </span>
+                <span class="author-row-name author-row-others">
+                    {rows.length > 0 ? "and others at Cerulean" : "Others at Cerulean"}
+                </span>
+            </span>
+        </li>
+    )}
+</ul>
+
+<style>
+    .author-rows {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font: 400 15px/1.4 var(--font-ui);
+    }
+
+    .author-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, max-content) minmax(16px, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        color: var(--c-ink);
+        text-decoration: none;
+    }
+
+    .author-row .author-avatar {
+        width: 24px;
+        height: 24px;
+        box-shadow: none;
+    }
+
+    .author-row-name {
+        min-width: 0;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    .author-row-others {
+        color: var(--c-muted);
+        font-weight: 400;
+    }
+
+    .author-row-rule {
+        height: 1px;
+        background: var(--c-rule);
+    }
+
+    .author-row-handle {
+        color: var(--c-muted);
+        font-size: 14px;
+        text-align: right;
+    }
+
+    a.author-row:hover .author-row-name,
+    a.author-row:focus-visible .author-row-name {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+    }
+
+    .author-initials {
+        font-size: 9px;
+    }
+</style>
