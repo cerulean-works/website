@@ -136,8 +136,8 @@ Use the supplied gradient disc, with “Cerulean” in Host Grotesk 500 when a n
 One expansive photograph of open sky fills the canvas or a deliberate large image region. Place a short Host Grotesk statement in its deepest, quietest blue, usually toward the upper left, in Porcelain. Crop so the text never sits on cloud or pale haze; choose the crop for contrast first and incident (clouds, horizon, landforms) second. A light deep-blue tint across the top third may support legibility, but must not read as a gradient overlay. Keep enough uninterrupted sky for the image to feel larger than the writing. The mark may precede the first line. Use the actual mission when introducing the lab:
 
 > Cerulean is a lab for  
-> breaking down barriers and  
-> democratizing AI exploration.
+> breaking down barriers  
+> to safe, open AI research.
 
 Scale to the format and reflow if required; never squeeze the text to preserve line breaks. Use an inscription for a short opening, not a paragraph of research prose.
 
