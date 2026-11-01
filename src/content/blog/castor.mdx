@@ -32,7 +32,7 @@ In this post, we walk through the key experiments and their implications for red
 
 ## Experiment design
 
-To separate the effects of pretraining data from the pretraining run itself, we adopted a twin-study methodology.
+To separate the effects of pretraining data from the pretraining run itself, we adopted a twin-study methodology. Geneticists compare identical twins with fraternal ones to tell how much of a trait comes from genes; we compare models that share a pretraining run with models that only share its data.
 
 We started with 1B-parameter base models from Ai2's DataDecide suite,<Sidenote title="DataDecide: How to predict best pretraining data with small experiments" authors="Magnusson et al." venue="ICML 2025" href="https://openreview.net/forum?id=p9YlQPF8fE" /> which were pretrained on 25 data recipes using three random seeds per recipe over the same 100B tokens. Taking the 75 models, we then post-trained a total of 150 models with two post-training seeds using Tülu 3 as the safety recipe.<Sidenote title="Tülu 3: Pushing frontiers in open language model post-training" authors="Lambert et al." venue="COLM 2025" href="https://openreview.net/forum?id=i1uGbfHHpH" />
 
