@@ -1,0 +1,132 @@
+---
+// A numbered citation, placed inline in MDX right after the words it cites,
+// e.g. `DataDecide<Sidenote … />`. Wide screens float it into the right
+// margin beside its line; narrower ones hide it until the marker is tapped,
+// then show it under that line.
+interface Props {
+    title: string;
+    authors: string;
+    venue: string;
+    href: string;
+}
+
+const { title, authors, venue, href } = Astro.props;
+const id = `sidenote-${Math.random().toString(36).slice(2, 10)}`;
+---
+
+<span class="sidenote-anchor"><button
+        class="sidenote-ref"
+        type="button"
+        aria-expanded="false"
+        aria-controls={id}
+        aria-label="Citation"></button><span class="sidenote" id={id} role="note"
+        ><a class="sidenote-title" href={href} target="_blank" rel="noopener noreferrer"
+            >{title}</a
+        ><span class="sidenote-meta">{authors} · {venue}</span></span
+    ></span>
+
+<script>
+    document.querySelectorAll<HTMLButtonElement>(".sidenote-ref").forEach((ref) => {
+        ref.addEventListener("click", () => {
+            const open = ref.getAttribute("aria-expanded") !== "true";
+            ref.setAttribute("aria-expanded", String(open));
+        });
+    });
+</script>
+
+<style is:global>
+    .article-body {
+        counter-reset: sidenote;
+    }
+
+    .sidenote-anchor {
+        counter-increment: sidenote;
+    }
+
+    .sidenote-ref {
+        margin: 0 0 0 1px;
+        padding: 0 1px;
+        border: 0;
+        background: none;
+        color: var(--c-muted);
+        font: 500 0.7em/1 var(--font-ui);
+        vertical-align: super;
+        cursor: pointer;
+        transition: color var(--c-motion-duration) ease;
+    }
+
+    .sidenote-ref::after {
+        content: counter(sidenote);
+    }
+
+    /* Adjacent citations read as "1,2". */
+    .sidenote-anchor + .sidenote-anchor .sidenote-ref::before {
+        content: ",";
+    }
+
+    .sidenote-ref:hover,
+    .sidenote-ref[aria-expanded="true"] {
+        color: var(--c-ink);
+    }
+
+    .sidenote {
+        position: relative;
+        padding-left: 18px;
+        overflow-wrap: break-word;
+    }
+
+    /* The number hangs left so titles align down the column. */
+    .sidenote::before {
+        content: counter(sidenote);
+        position: absolute;
+        left: 0;
+        color: var(--c-muted);
+        font: 500 12px/1.4 var(--font-ui);
+        padding-top: 1px;
+    }
+
+    .article-body .sidenote-title {
+        display: block;
+        color: var(--c-ink);
+        font: 400 14px/1.4 var(--font-ui);
+        text-decoration: none;
+    }
+
+    .article-body .sidenote-title:hover {
+        text-decoration: underline;
+    }
+
+    .sidenote-meta {
+        display: block;
+        margin-top: 4px;
+        color: var(--c-muted);
+        font: 400 12px/1.4 var(--font-ui);
+    }
+
+    /* Narrower screens: tap the marker to open the citation under its line. */
+    @media (max-width: 1279px) {
+        .sidenote {
+            display: none;
+        }
+
+        .sidenote-ref[aria-expanded="true"] + .sidenote {
+            display: block;
+            margin-block: 12px;
+        }
+    }
+
+    /* Wide screens: a 200px column in the right margin, mirroring the contents
+       rail, with each citation level with the line that cites it. */
+    @media (min-width: 1280px) {
+        .sidenote-ref {
+            cursor: default;
+        }
+
+        .sidenote {
+            float: right;
+            clear: right;
+            width: 200px;
+            margin: 0.35em calc(-1 * (200px + 64px)) 20px 0;
+        }
+    }
+</style>
