@@ -1,0 +1,39 @@
+---
+import DotPlot from "../charts/DotPlot.astro";
+import type { ChartSeries } from "../charts/chart";
+import { recipes } from "./data";
+
+const series: ChartSeries[] = [
+    { key: "mz", label: "MZ twins", shape: "dot", color: 1 },
+    { key: "same", label: "Same-recipe pairs", shape: "ring", color: 2 },
+    { key: "cross", label: "Cross-recipe pairs", shape: "square", color: 3 },
+];
+const mark = (key: string, [value, lo, hi]: [number, number, number]) => ({
+    series: key,
+    value,
+    lo,
+    hi,
+});
+const rows = recipes.map((recipe) => ({
+    label: recipe.name,
+    tag: recipe.main ? "main" : undefined,
+    marks: [
+        mark("cross", recipe.cross),
+        mark("same", recipe.same),
+        mark("mz", recipe.mz),
+    ],
+}));
+---
+
+<DotPlot
+    title="The ancestry gap appears in all 25 data recipes"
+    caption="Mean corrected per-prompt correlation of vulnerability profiles for each data recipe at 1B parameters, sorted by the ancestry gap (MZ twins minus same-recipe pairs). Lines are 95% intervals over prompts. Cross-recipe pairs pair a model from this recipe with models from every other recipe."
+    series={series}
+    rows={rows}
+    domain={[0.6, 1]}
+    ticks={[0.6, 0.7, 0.8, 0.9, 1]}
+    format={3}
+    axisLabel="Corrected per-prompt correlation"
+    rowHeader="Data recipe"
+    connect
+/>

@@ -1,0 +1,45 @@
+---
+import DotPlot from "../charts/DotPlot.astro";
+import { fingerprint } from "./data";
+
+const fingerprintRows = fingerprint.run.map((run, index) => {
+    const recipe = fingerprint.recipe[index];
+    return {
+        label: `${run.n.toLocaleString("en-US")} prompts`,
+        marks: [
+            { series: "run", value: run.mean, lo: run.lo, hi: run.hi },
+            {
+                series: "recipe",
+                value: recipe.mean,
+                lo: recipe.lo,
+                hi: recipe.hi,
+            },
+        ],
+    };
+});
+---
+
+<DotPlot
+    title="A few dozen prompts identify the pretraining run"
+    caption="How often a model's responses to jailbreaks pick out its own pretraining run among 75 (chance 1.3%), or the dataset of an unseen model among 25 (chance 4%). Means over 200 random subsets of prompts; lines span the middle 95% of subsets."
+    series={[
+        {
+            key: "run",
+            label: "Pretraining run (of 75)",
+            shape: "dot",
+            color: 1,
+        },
+        {
+            key: "recipe",
+            label: "Dataset (of 25)",
+            shape: "ring",
+            color: 2,
+        },
+    ]}
+    rows={fingerprintRows}
+    domain={[0, 1]}
+    ticks={[0, 0.25, 0.5, 0.75, 1]}
+    format="percent"
+    axisLabel="Correctly identified"
+    rowHeader="Prompts used"
+/>
