@@ -1,0 +1,90 @@
+---
+title: "Identically trained language models break on different jailbreaks"
+description: "Introducing Castor: a twin study of 150 language models on what decides which jailbreaks break a model."
+pubDate: "2026-10-22"
+author:
+    - author: "Chi-Wei Chang"
+      url: "https://github.com/harrychangtw"
+    - author: "Mu-Tien Kuo"
+      url: "https://github.com/burnedinthesky"
+    - author: "Kuan-Wei Lee"
+      url: "https://github.com/kdotwei"
+draft: true
+thumbnail:
+    src: "/images/blog_thumbnails/castor.webp"
+    alt: "A white radio telescope dish pointed at a blue sky"
+---
+
+import { CASTOR_PAPER_URL } from "../../consts";
+import Sidenote from "../../components/Sidenote.astro";
+import RecipeGapChart from "../../components/castor/RecipeGapChart.astro";
+import WitnessCharts from "../../components/castor/WitnessCharts.astro";
+
+export const HUGGING_FACE_URL = "https://huggingface.co/collections/cerulean-works/castor";
+export const GITHUB_URL = "https://github.com/cerulean-works/castor";
+
+When an evaluation reveals that a model is vulnerable to a specific jailbreak, the typical assumption is that we've learned something structural across the entirety of its training process: its pretraining corpus, its alignment mixture, or its post-training schedule. Change the recipe, and the vulnerabilities should change; keep it identical, and the same safety profile should hold. It should hold... right?
+
+We were suspicious of whether this was true, since this assumption overlooks an important factor of a training run: the randomness inherent to pretraining itself.<Sidenote title="The MultiBERTs: BERT reproductions for robustness analysis" authors="Sellam et al." venue="ICLR 2022" href="https://openreview.net/forum?id=K0E_F0gFDgA" /><Sidenote title="PolyPythias: Stability and outliers across fifty language model pre-training runs" authors="van der Wal et al." venue="ICLR 2025" href="https://openreview.net/forum?id=bmrYu2Ekdz" /> To investigate how much a seemingly innocent seed change could impact safety training, we launched project Castor, where we test whether identical pretraining runs of the same data, given identical safety post-training, break on the same jailbreaks.
+
+Across 150 models spanning 25 data recipes, we find that separate pretraining runs of the same data diverge substantially. While two post-trained copies of the same pretraining checkpoint break on nearly identical prompts, two separate pretraining runs on the same data break on noticeably different ones, correlating barely higher with each other than models trained on a different corpus. In practice, this means that the most effective attacks found on one checkpoint rarely stay on top across runs, and that vulnerabilities reflect a specific pretraining trajectory rather than a stable property of its data recipe.
+
+In this post, we walk through the key experiments and their implications for red-teaming. For the complete methodology, analysis and tables, see <a href={CASTOR_PAPER_URL}>our paper on arXiv</a>. All code, model checkpoints and judge labels are available on <a href={GITHUB_URL}>GitHub</a> and <a href={HUGGING_FACE_URL}>Hugging Face</a>.
+
+## Experiment design
+
+To separate the effects of pretraining data from the pretraining run itself, we adopted a twin-study methodology.
+
+We started with 1B-parameter base models from Ai2's DataDecide suite,<Sidenote title="DataDecide: How to predict best pretraining data with small experiments" authors="Magnusson et al." venue="ICML 2025" href="https://openreview.net/forum?id=p9YlQPF8fE" /> which were pretrained on 25 data recipes using three random seeds per recipe over the same 100B tokens. Taking the 75 models, we then post-trained a total of 150 models with two post-training seeds using Tülu 3 as the safety recipe.<Sidenote title="Tülu 3: Pushing frontiers in open language model post-training" authors="Lambert et al." venue="COLM 2025" href="https://openreview.net/forum?id=i1uGbfHHpH" />
+
+<figure>
+    <a href="/images/blog/castor/study-design.webp">
+        <img
+            src="/images/blog/castor/study-design.webp"
+            alt="Study design in four panels. Training: two pretraining seeds of one data recipe give two base models, and each base model receives the same SFT and DPO safety post-training under two post-training seeds. Evaluation: every model answers a shared prompt set drawn from HarmBench, WildJailbreak, OR-Bench and XSTest, giving a per-prompt vulnerability strip. Kinds of pair: MZ twins, same-seed reruns, same-recipe pairs and cross-recipe pairs, ordered by shared ancestry. Experiments: shared ancestry, 25 recipes at 3 sizes, a judge check against human labels, and one checkpoint as a witness."
+            width="2000"
+            height="741"
+            loading="lazy"
+            decoding="async"
+        />
+    </a>
+    <figcaption>
+        Study design. Each base model is post-trained twice with identical data
+        and recipe, and every model answers the same prompts. Pairs of models
+        are then compared by what their base models share.
+    </figcaption>
+</figure>
+
+Using 3,212 jailbreak prompts,<Sidenote title="HarmBench: A standardized evaluation framework for automated red teaming and robust refusal" authors="Mazeika et al." venue="ICML 2024" href="https://proceedings.mlr.press/v235/mazeika24a.html" /><Sidenote title="WildTeaming at scale: From in-the-wild jailbreaks to (adversarially) safer language models" authors="Jiang et al." venue="NeurIPS 2024" href="https://openreview.net/forum?id=n5R6TvBVcX" /> we sampled 20 responses per prompt from every model and compared how similarly given pairs of models break. Specifically, we categorize model pairs based on their shared ancestry during training:
+
+- **MZ twins**, named after monozygotic twins, share both the pretraining seed and data recipe but differ in their post-training seed.
+- **Same-recipe pairs** share a pretraining data recipe but differ in their pretraining and post-training seeds.
+- **Cross-recipe pairs** share neither the pretraining data recipe nor the seed.
+
+By measuring the gaps between these groups, we can isolate where vulnerabilities come from: if a model's safety profile is purely a product of its pretraining data, same-recipe pairs should behave just like MZ twins.
+
+## How much does the run matter?
+
+Averaged across 25 data recipes, MZ twins have vulnerability profiles that correlate at 0.984, meaning they break on nearly identical sets of prompts. If the pretraining seed is changed, that correlation drops drastically to 0.811. Changing the data recipe entirely only drops it slightly more to 0.779. In terms of correlation, changing the pretraining run alters the vulnerability profile over five times more than changing the pretraining corpus itself.
+
+<RecipeGapChart />
+
+A gap this large made us doubt our own pipeline before we believed it, so we tried to break it. Across three model sizes, author-labeled responses, and a completely different safety dataset, the effect held, even widening when we factored out the baseline strength of individual attack templates and harmful requests. This suggests that a model's weak spots come from its training run more than its training data.
+
+## Implications for red-teaming
+
+In practice, a red-teaming result is partly a result about one run. The best attack on one checkpoint stays the best after a new post-training seed in 67% of pairs, but after a new pretraining seed in only 27%. A model retrained on identical data may therefore need its own red-teaming, and evaluations are better read across several runs than from one checkpoint.
+
+The same caution applies to comparing pretraining data. Train one model on each of two data recipes, and about a quarter of the time the less safe recipe will look like the safer one. Averaging over three pretraining runs cuts the noise in each recipe's estimate by roughly 40%, which makes such comparisons considerably more reliable.
+
+This was the result we least expected: these failures are specific enough to work as a fingerprint. A model's responses to jailbreaks pick out its own pretraining run among 75 in every case, and a random 1.6% of the prompts still do so 98% of the time. The same responses identify the model's data recipe only about half the time, so what a model breaks on says far more about its run than about its data.
+
+<WitnessCharts />
+
+## Beyond one checkpoint
+
+A jailbreak is usually read as a verdict on how a model was built, yet it is closer to a verdict on one particular run. Each run settles into weak spots of its own, consistent enough to outlast a fresh round of the same safety training and distinct enough to tell it apart from its siblings. The data recipe still shapes how often a model breaks, but the run decides where it breaks. A jailbreak that works on one checkpoint may fail on an identically trained sibling, which means testing a single model tells us only part of the story.
+
+We could only afford to go up to 1B parameters, so the obvious open question is whether this holds for larger models. To help anyone who wants to check, we release the weights of our safety-post-trained models at 150M, 300M and 1B parameters, with per-prompt judge labels, on <a href={HUGGING_FACE_URL}>Hugging Face</a>, and our code on <a href={GITHUB_URL}>GitHub</a>. The full methods, confidence intervals and limitations are in <a href={CASTOR_PAPER_URL}>our paper on arXiv</a>.
+
+This research was made possible by the computing resources of the National Center for High-Performance Computing (NCHC), National Institutes of Applied Research, Taiwan. We thank Prof. Meng-Hsun Tsai of National Yang Ming Chiao Tung University, our co-author, for his guidance.

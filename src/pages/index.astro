@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import LogoMark from "../components/LogoMark.astro";
 import WorkCard from "../components/WorkCard.astro";
 import LatestPosts from "../components/LatestPosts.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { CASTOR_PAPER_URL, SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 import "../styles/home.css";
 ---
 
@@ -98,6 +98,7 @@ import "../styles/home.css";
                     title="Castor"
                     description="Evaluating language model safety from pretraining"
                     image="/images/blog_thumbnails/castor.webp"
+                    href={CASTOR_PAPER_URL}
                     imageAlt="A white radio telescope dish pointed at a blue sky"
                     imageWidth={1600}
                     imageHeight={1600}

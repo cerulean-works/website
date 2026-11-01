@@ -23,10 +23,14 @@ const {
     imagePosition = "center",
 } = Astro.props;
 const Wrapper = href ? "a" : "div";
+// External links open in a new tab, matching the footer.
+const external = href?.startsWith("http")
+    ? { target: "_blank", rel: "noopener noreferrer" }
+    : {};
 ---
 
 <article class="work-card">
-    <Wrapper class="work-card-content" href={href}>
+    <Wrapper class="work-card-content" href={href} {...external}>
         <img
             class="artwork-square"
             src={image}
