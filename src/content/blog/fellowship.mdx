@@ -1,0 +1,142 @@
+---
+title: "How do we train the next generation of researchers?"
+description: "A glimpse on how Cerulean is training our research team."
+pubDate: "2026-10-22"
+author:
+    - author: "Mu-Tien Kuo"
+      url: "https://github.com/burnedinthesky"
+    - author: "et al"
+thumbnail:
+    src: "/images/blog_thumbnails/fellowship.webp"
+    alt: "A white dandelion on top of a blue sky."
+---
+
+Sometimes we wonder whether the most ambitious project in AI is still the university syllabus. It has to summarize an enormous field, decide which parts someone should learn, and hope the field remains sufficiently recognizable by the time the semester ends. Meanwhile, someone has released another model, three papers have questioned the recommended training recipe, and the students are asking ChatGPT to explain the lecture.
+
+One could respond by updating the slides more frequently. Taken seriously enough, this probably becomes a full-time job with the unfortunate side effect of leaving no time to teach.
+
+Of course, the fundamentals haven’t suddenly become irrelevant. Understanding probability, optimization, and how a computer moves numbers around remains immensely useful. But when we started preparing for Cerulean’s pretraining research, the amount of background we could reasonably ask everyone to learn was a bit horrifying. We could probably fill twenty hours of lectures a week and still find ourselves saying, “There’s quite a bit we didn’t have time to cover, so please read these papers before Tuesday.”
+
+This seemed like a questionable way to get people excited about research.
+
+Instead, we wanted to see how much of that knowledge people could develop through working on the problems themselves. We would give everyone something concrete to build or investigate, make it reasonably easy to find out how it was going, and use our time together to work through the questions that came up. The lectures would help connect the pieces, while the labs would give people a reason to care about them.
+
+This became the Cerulean Fellowship, though internally we’ve mostly called it our study group. We’ve now been running for about a month and a half, and somehow in that time the group has gone from implementing GPT-2 to training models, experimenting with optimizers, and competing on a NanoGPT midterm. The progress has been far beyond what we expected when we started. It has also given us plenty of opportunities to discover that an educational mechanism can work very enthusiastically in a direction its designers did not quite intend.
+
+We want to share a bit of both: how we’ve been running the Fellowship, what seems to have worked, and what we’re trying to improve as we go.
+
+## Giving people a problem worth understanding
+
+Our guiding principle is to take the skills that research relies on and give people repeated opportunities to practice them under manageable conditions. We want everyone to get comfortable proposing an explanation, deciding what would test it, and working through what the result actually tells them. Ideally, they get to do this often enough that an unexpected result becomes something they know how to investigate, even if they have no idea what the explanation is yet.
+
+A considerable amount of background gets picked up along the way. You encounter something you don’t understand because it is preventing an experiment from working, or because someone else tried an idea that looks promising. Suddenly, the paper that seemed fairly optional yesterday has become quite interesting. We think there is something useful about encountering knowledge at a moment when you have a place to put it.
+
+The more experienced people in the group have an important role here. There is no shortage of explanations of individual concepts, and ChatGPT has made it much easier to get help with the first few layers of a question. What is harder to obtain is a convincing picture of how everything fits together in the work you are actually doing. Why does this implementation detail matter for the comparison? Which assumption connects the result to the claim? Why are we spending a week on this particular uncertainty when there are fifty other things we could investigate?
+
+These connections are often where we discover what we don’t know. You might understand data parallelism and batch size perfectly well as separate ideas, then realize that adding GPUs changed the optimization problem you thought you were holding fixed. Helping someone find that missing connection can be more valuable than giving them another hour of background on either topic.
+
+We therefore try to use the hosted sessions to assemble this bigger picture together. Everyone brings a slightly different set of things they understand, things they are confused about, and experiments they have spent an unreasonable amount of time debugging. That gives us quite a bit to work with. The hope is that, over time, people become better at seeing the connections themselves and helping one another find the pieces they are missing.
+
+This also shapes how we think about leading the Fellowship. We don’t have a complete recipe for turning someone into a researcher, and we would be suspicious of anyone who claimed to. We do have some hypotheses about useful practice, resources we can make available, and a group willing to try things seriously. Our responsibility is to make that environment fruitful, notice where it is falling short, and keep adjusting it.
+
+In particular, we think the incentives are our responsibility. If we create a competition, we should expect people to try to win it. If the fastest way to win involves skipping something we hoped they would learn, that gives us a design problem to solve. We would much rather work on that problem than give everyone a lecture about having the wrong priorities.
+
+## How the labs work
+
+Labs are the main place where this philosophy becomes something people can actually do. Each cycle gives everyone a shared problem, some constraints, and a way to get feedback. Early on, the tasks are fairly well specified. As we progress, more of the decisions become yours to make, including what experiment would be worth running in the first place.
+
+We began by asking everyone to implement GPT-2 and build an evaluation pipeline around it. The point was to develop familiarity through implementation, without first requiring everyone to sit through a detailed tour of the architecture. There are quite a few things you can comfortably nod along to in a lecture that become less comfortable when you have to make them work yourself. Automated checks gave participants a way to find those gaps and work through them.
+
+We also asked pairs to adapt an existing attention-analysis paper to GPT-2 and write a short paper of their own. Part of the purpose was simply to make “research” and “papers” feel less intimidating. Take a question, run some experiments, make the figures, and explain what you found. The report did not have to revolutionize interpretability. We hoped that having written one would make the next paper feel a little less like an object produced by a different species of human.
+
+From there, we moved into training. One lab gave participants two H200s for thirty minutes per run and asked them to train GPT-2 Small on C4. The following optimizer lab moved to a randomly initialized model using the Llama 3.2 1B architecture, with limits on both tokens and compute and a small number of full-budget attempts per pair. These were shared problems with enough freedom for people to pursue different ideas, while keeping the experiments small enough that they could afford to be wrong.
+
+This is where the group setting became particularly enjoyable. Someone gets an improvement, other people want to know what happened, and suddenly there is a concrete reason to read about a method or look more closely at an implementation. The same paper can feel quite different when it might explain why your model is learning more slowly than someone else’s.
+
+We wanted the constraints to make the labs resemble the work we were preparing for. Participants had to choose what to investigate, decide which results deserved more attention, and make plans within a budget. Research proposals gave us a chance to discuss those decisions before the experiments, while the leaderboard gave everyone something shared to follow as the cycle progressed.
+
+The final score only captures a small part of what makes this interesting, though. We would like readers to be able to follow a result back into the experiments behind it: what changed, which attempts failed, how the learning curves behaved, and what the group decided to investigate next. Our leaderboard links results to Flock experiments, giving us a useful starting point for making that process visible.
+
+The part we most want to preserve is how one person’s experiment becomes useful to someone else. An improvement creates a question, a discussion suggests another experiment, and an unsuccessful attempt saves the next person some trouble. With enough of these cycles, we hope everyone becomes more comfortable deciding what to try next, including when the lab eventually stops telling them what the problem is.
+
+## Reinventing history
+
+The labs also give us a different starting point for lectures. Everyone has been working on related problems, so we have some shared experience to draw from. Rather than trying to cover every component of a finished method, we can spend the session asking why someone would have wanted those components in the first place.
+
+The format we’ve enjoyed most is what we call “reinventing history.” We start with a problem, have everyone suggest ways to solve it, and then ask, “What’s the problem with your solution?” Someone points out a limitation, we try to address it, and eventually another idea begins to look rather reasonable. With some luck, we arrive somewhere close to a decision that people in the literature also had to make.
+
+There is something satisfying about encountering a method this way. A detail that initially looked arbitrary becomes a response to a difficulty you have just spent time thinking about. You also get to see which assumptions made that response sensible, which gives us a natural place to ask whether those assumptions still hold in our own work.
+
+We don’t expect the discussion to reproduce the historical sequence exactly. People have read different things, and sometimes someone already knows where the conversation is going. What matters is that the group has a chance to work through the pressure behind the decisions. We want everyone to feel comfortable proposing an idea that almost works, since figuring out why it almost works is often the most useful part of the session.
+
+This is also where the more experienced members can help connect the pieces. A suggestion might resemble an older method, or fail for a reason that appears in a different part of the literature. Bringing in that connection at the moment it becomes relevant gives people a more coherent picture of the field. The hope is that a lecture leaves everyone with a sense of how the ideas relate, along with a few questions they now have better reasons to investigate.
+
+The format has its difficulties. Preparing a good discussion requires considerable familiarity with the surrounding work, and it gets harder as we move into topics where our own understanding is less settled. We also don’t yet know how consistently the insights from a group session carry into someone’s experiments later that week. These are things we want to improve, including by having participants lead more sessions around the ideas they have been investigating themselves.
+
+## Six weeks in
+
+The first six weeks have been considerably more exciting than we expected. We began with a group preparing to do pretraining research, and within the first phase people were already implementing models, building evaluations, investigating attention, and comparing training recipes. The optimizer labs and NanoGPT midterm brought out an amount of experimentation that would have been difficult to create through lectures alone. We’re immensely proud of the work everyone has put into this.
+
+The lab format seems to have helped give that effort a direction. There was always something concrete to try, a result to inspect, or another submission to be curious about. People could enter the same problem from different starting points and still have useful things to discuss. This is one of the strongest reasons we want to keep the format as we move forward.
+
+At the same time, some of the results made us question what the labs were actually training. Agents made it possible to implement methods and run experiments much faster than anyone could develop familiarity with the work. Under the pressure of a deadline or a leaderboard, pausing to understand the implementation could begin to feel like an optional detour. That is a fairly unfortunate incentive for a research fellowship.
+
+We still need to learn how to collaborate effectively with agents. There is plenty of useful work they can do, including exploring possibilities and helping reject ideas that do not deserve much further attention. But when a direction begins to look promising, we want the humans pursuing it to take more responsibility for understanding what is happening. Being able to explain the experiment, question the implementation, and design the next comparison should become increasingly important as the work progresses.
+
+This matters because curiosity tends to grow out of familiarity. Something looks slightly strange, a configuration seems unnecessary, or a result behaves differently from what you expected. Those details can become interesting questions, but only if someone is close enough to the work to notice them. Reading a convincing summary can leave us feeling that we understand an experiment while missing much of what we would have encountered by doing it ourselves.
+
+We also felt that too much compute was going toward broad searches over existing recipes. Sweeps have their place, and sometimes they are exactly what a question needs. But we wanted more of the experiments to develop an explanation, test a new piece of methodology, or help predict what would happen at a larger scale. A lab can produce a very good configuration while giving us less practice in those things than we hoped.
+
+The social mechanisms had their own surprises. Pairing was meant to give everyone someone to brainstorm with and a reason to explain their work. In practice, getting another person sufficiently up to date could feel costly enough that people continued experimenting on their own. Office hours were booked less often than expected, and of three paper sessions we tried to hold, we only got around to one. It turns out that writing “regular paper discussions” in the plan is a rather incomplete implementation of having regular paper discussions.
+
+We don’t think these outcomes call for a lecture about working harder or collaborating more. They tell us that some of the activities we care about need a better place in the design. A shared assignment did not reliably produce shared thinking, and a better score did not reliably tell us how much someone understood. Both are useful things to have learned while the Fellowship is still young.
+
+This is what we want to carry into the next phase. We want to keep the energy of the labs while making more room for people to explain their reasoning, follow one another’s work, and stay close to the details of an investigation. The first six weeks gave us plenty of reasons to be optimistic about what the group can accomplish. They also gave us a much clearer idea of what we need to help one another practice.
+
+## What we’re changing
+
+The most important addition we’re proposing for Phase 2 is a research log maintained by each pair. Whenever someone tries something, we want them to record what they tried, why they tried it, and what they learned. The format can stay fairly flexible. What matters is that another person can follow the reasoning, including the part where an experiment produced something nobody quite knows how to explain yet.
+
+We hope this makes the work more visible to the rest of the group. Quite a few interesting ideas appeared in the first phase without becoming widely known, sometimes even to the person’s partner. A short record gives those ideas somewhere to accumulate and makes it easier to rejoin an investigation without asking someone to reconstruct the previous week from memory. It also gives us something concrete to discuss when the experiments are moving faster than the explanations.
+
+For this reason, we strongly prefer that participants write the logs themselves. Part of the exercise is discovering which parts of the story you cannot yet explain. An agent can make that story sound quite convincing without resolving the underlying confusion, which would make the log more pleasant to read while defeating much of its purpose. We would be very happy to read an unfinished explanation that makes the uncertainty clear.
+
+We’re also proposing that we rearrange pairs around people who already communicate regularly and give pairs a more meaningful shared objective through the scoring. Alongside this, we would like to recognize individual contributions to improving the group’s best result. An early improvement can open a direction that several other people build on, and we think that contribution deserves to remain visible after someone else takes the top spot.
+
+Compute-aware scoring is another idea we’ve been considering, though we are much less certain about how to get it right. We care about the resources spent discovering an improvement, but we also want people to feel comfortable trying uncertain things. A penalty that makes everyone reluctant to experiment would be a rather unfortunate achievement. This is one of the mechanisms we would like to keep open for discussion instead of pretending we have found the correct formula.
+
+For the hosted sessions, we’re proposing that pairs give lectures on the ideas behind their most promising experiments. This would involve reading more broadly around the direction and explaining how their work fits into it, followed by feedback from the group. We’re also considering regular one-on-ones, since leaving office hours entirely to whoever feels ready to book them gave us less contact than we hoped. Sometimes a conversation should begin with how the week has been going, including whether the work has been exciting, frustrating, or simply difficult to fit around everything else.
+
+The common thread is that we want understanding and collaboration to have a more explicit place in the Fellowship. We still want people to enjoy competing and to feel excited about an improvement. We also want the environment to give them reasons to slow down at useful moments, explain what happened, and let someone else into the investigation.
+
+## Building something we understand
+
+Another substantial part of Phase 2 is having each pair build a training framework, beginning with the tensor library and adding capabilities over several cycles. We eventually want to develop infrastructure for our own research, so there will be quite a bit of engineering alongside the modeling work. The Fellowship gives us a chance to become familiar with that work before a larger project depends on our ability to do it well.
+
+For this part, we are strongly encouraging participants to write the implementations themselves. Writing a system seems to expose a different set of questions from reading one. You have to decide what information to store, where it should live, and how the pieces will interact. Some of those decisions look perfectly reasonable until you are responsible for making the whole thing fit into memory or behave correctly across devices.
+
+A small example is an evaluation that needs quantities derived from both logits and probabilities. Storing both can look like a convenient interface decision, but implementing it yourself makes the duplicated memory rather more noticeable. We expect there to be many details like this that become familiar through having to deal with them. That familiarity should make it easier to recognize suspicious behavior later, including when an agent is helping with the implementation.
+
+The first framework will probably contain a fair amount of spaghetti code. We are quite comfortable with that possibility. It is difficult to design a complicated system well before you have experienced the consequences of a few questionable decisions, and the study group seems like a good place to get some of those decisions out of our systems. We hope people finish the exercise with a clearer sense of what they would build differently next time and enough understanding to explain why.
+
+This is also an area where we expect our approach to change. If we find a way to use agents that preserves the familiarity we want while making the work substantially faster, we would be happy to adopt it. For now, we think there is value in spending some time close enough to the machinery that its details become part of how we think.
+
+The broader progression remains what we originally hoped for. Phase 1 gives us experience with the past through established methods. Phase 2 brings us into the present, where we investigate and extend those methods while building more of the engineering ourselves. Phase 3 gives everyone more responsibility for choosing a question, carrying out the research, and presenting the results to people beyond the group. By then, we hope the transition into our larger pretraining effort will feel like a continuation of work we have already learned how to approach together.
+
+## Where we hope this goes
+
+It would be a bit ambitious to announce the future of education based on six weeks of a study group. We have a motivated group, access to compute, and people willing to spend time helping. We also have much more immediate evidence about submissions and training results than about whether someone’s judgment will hold up in a longer project with less convenient feedback. That will take more time to find out.
+
+Still, the experience has made us more interested in what education could look like when access to explanations is no longer the main bottleneck. A student can now get help with a concept at almost any hour, ask the same question several ways, and receive assistance with an implementation before anyone else has finished their morning coffee. There is an enormous opportunity here, even if our GPU budgets would appreciate everyone sleeping occasionally.
+
+What remains difficult is helping someone turn that assistance into an understanding they can use. A convincing explanation can make a topic feel familiar very quickly. Being able to make decisions with it, notice when it does not apply, and connect it to something happening in your own work takes more contact with the problem. We think educational environments can do a great deal to make that contact possible.
+
+The people leading those environments would still need substantial knowledge. In some ways, helping someone connect an unexpected result to the right part of the literature is more demanding than preparing a lecture on a topic selected in advance. But their time could go toward choosing useful problems, discussing decisions, and helping learners recognize the gaps in their own picture. Those are contributions that become more valuable as the amount of information available to everyone continues to grow.
+
+We also hope more of this learning can happen among peers. One of the things we want from the Fellowship is for participants to become increasingly capable of helping one another investigate a problem. Someone who has just worked through a confusing implementation may remember exactly which explanation would have helped. Someone pursuing a different experiment may notice an assumption that everyone close to the original work has stopped questioning. Giving those conversations a place to happen is part of the educational work too.
+
+In the future we hope for, people would have more opportunities to enter a community through a problem they want to understand. They could learn the background as they need it, receive help from both people and AI, and gain more responsibility as their capabilities develop. Early on, someone might help them choose an experiment. Later, they would have to justify the choice themselves. Eventually, they might be the person who notices that the question everyone has been working on deserves to change.
+
+Making this possible will require resources as well as teaching ideas. Our labs work partly because participants can actually run the experiments, inspect the results, and try again. We would like our work on efficient training and open infrastructure to help make that kind of participation available to more people. The research we want to do and the environment we want to learn in are closely connected.
+
+For now, we have a group of people who have made the first six weeks far more fruitful than we could have imagined, along with a growing list of things we would like to improve. We hope the next phase gives everyone more room to develop their own ideas and more familiarity with the work needed to pursue them. Eventually, it would be immensely satisfying to see people who joined Cerulean to learn how research works helping create the next environment in which someone else gets to begin.
