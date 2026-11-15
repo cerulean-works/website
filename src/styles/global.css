@@ -104,7 +104,7 @@ a:hover {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: var(--c-paper);
+    background: transparent;
     color: var(--c-ink);
 }
 
@@ -122,15 +122,18 @@ a:hover {
 }
 
 /* Mask a solid fill so its color can transition with the page canvas. */
-.js .site-header-wrap[data-header-mode="after-hero"]::before {
+.site-header-wrap::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
     background-color: var(--c-paper);
     mask-image: linear-gradient(black 30%, 75%, transparent);
-    visibility: hidden;
     pointer-events: none;
+}
+
+.js .site-header-wrap[data-header-mode="after-hero"]::before {
+    visibility: hidden;
 }
 
 .js .site-header-wrap[data-header-mode="after-hero"].is-visible::before {
@@ -349,6 +352,10 @@ a:hover {
 }
 
 @media (forced-colors: active) {
+    .site-header-wrap::before {
+        display: none;
+    }
+
     .site-header-wrap,
     .site-footer {
         background: Canvas;
