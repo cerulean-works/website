@@ -16,6 +16,7 @@ export const REPO_URL = "https://github.com/yukicoder0509/training-llama-3-2";
 
 import Sidenote from "../../components/Sidenote.astro";
 import FinalLossChart from "../../components/optimizer-dynamics/FinalLossChart.astro";
+import LossVsLrChart from "../../components/optimizer-dynamics/LossVsLrChart.astro";
 
 Optimizer dynamics can distinguish optimizers, but mostly can't predict the runs within the same optimizer family, with one candidate exception.
 
@@ -358,6 +359,10 @@ For each optimizer, we train proxy models with different learning rates. The lea
 We first explore possible indicators for the best learning rate band on the proxy model—specifically, metrics whose values follow a U-shape or an inverted U-shape across LRs, with the best learning rate band sitting at the top or bottom. We then run a learning rate sweep on the main model to test whether the indicators we found on the proxy model transfer.
 
 In short, most best-LR indicators found on the proxy are screening noise or simply track the LR value. The one that survives is probe sharpness for Muon: it peaks at about LR 0.01 on both models, around the best LR band.
+
+First, the loss itself across each sweep: every optimizer shows a clear best-LR band, with the final loss climbing on either side of it.
+
+<LossVsLrChart />
 
 ### Proxy model
 

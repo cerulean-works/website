@@ -1,0 +1,53 @@
+---
+/**
+ * The learning-rate sweeps as small multiples: one panel per optimizer, each
+ * centered on its own best LR. x is the learning rate in log2 steps relative to
+ * that optimizer's best, y is Δ final eval loss above its best, so every panel
+ * bottoms at (0, 0) and the width of the valley is comparable across optimizers.
+ */
+import ScatterPlot, {
+    type ScatterPanel,
+    type ScatterPoint,
+} from "../charts/ScatterPlot.astro";
+import type { ChartSeries } from "../charts/chart";
+import { proxyLrSweeps } from "./data";
+
+const series: ChartSeries[] = [
+    { key: "swept", label: "Swept LR", color: 1, shape: "dot" },
+    { key: "best", label: "Best LR", color: 2, shape: "diamond" },
+];
+
+const log2 = (value: number) => Math.log(value) / Math.log(2);
+
+const panels: ScatterPanel[] = proxyLrSweeps.map((sweep) => {
+    const bestLoss = Math.min(...sweep.points.map(([, loss]) => loss));
+    const [bestLr] = sweep.points.find(([, loss]) => loss === bestLoss)!;
+
+    const points: ScatterPoint[] = sweep.points.map(([lr, loss]) => ({
+        series: loss === bestLoss ? "best" : "swept",
+        x: log2(lr / bestLr),
+        y: loss - bestLoss,
+        label: `LR ${lr} · ${loss.toFixed(4)} loss`,
+    }));
+
+    return {
+        title: sweep.optimizer,
+        points,
+        xDomain: [-3.5, 3.5],
+        xTicks: [-3, -2, -1, 0, 1, 2, 3],
+        yDomain: [0, 0.13],
+        yTicks: [0, 0.04, 0.08, 0.12],
+    };
+});
+---
+
+<ScatterPlot
+    title="Final eval loss across the learning-rate sweep (proxy)"
+    caption="One panel per optimizer, centered on its own best learning rate. x is the learning rate in doublings from the best (0 = best); y is how much higher the final loss sits above that optimizer's best. Each sweep has a clear minimum, and the loss climbs as the learning rate moves away from it."
+    series={series}
+    panels={panels}
+    xLabel="learning rate (log₂ from best)"
+    yLabel="Δ final eval loss"
+    xFormat={1}
+    yFormat={3}
+/>
