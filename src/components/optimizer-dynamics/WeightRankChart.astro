@@ -1,0 +1,80 @@
+---
+/**
+ * Weight stable rank over training: the mean over hidden matrices and the tied
+ * embedding, one line per optimizer. Proxy 6B runs by default; `model="main"`
+ * shows the 1B runs (NorMuon, SOAP, AdamW).
+ */
+import LineChart, { type LineSeries } from "../charts/LineChart.astro";
+import {
+    OPT_ORDER,
+    MAIN_ORDER,
+    OPT_COLOR,
+    OPT_SHAPE,
+    PROXY_DECAY_START,
+    MAIN_DECAY_START,
+    proxyX,
+    mainX,
+    proxyWSrankGlobal,
+    mainWSrankGlobal,
+    proxyWSrankEmbed,
+    mainWSrankEmbed,
+    type Optimizer,
+} from "./dynamics";
+
+interface Props {
+    model?: "proxy" | "main";
+}
+const { model = "proxy" } = Astro.props;
+
+const order = model === "main" ? MAIN_ORDER : OPT_ORDER;
+const x = model === "main" ? mainX : proxyX;
+const decay = model === "main" ? MAIN_DECAY_START : PROXY_DECAY_START;
+const xTicks =
+    model === "main"
+        ? [0, 500, 1000, 1500, 2000, 2500]
+        : [0, 2000, 4000, 6000, 8000, 10000];
+
+function build(data: Record<Optimizer, (number | null)[]>): LineSeries[] {
+    return order.map((opt) => ({
+        key: opt,
+        label: opt,
+        color: OPT_COLOR[opt],
+        shape: OPT_SHAPE[opt],
+        values: data[opt],
+    }));
+}
+
+const globalData = model === "main" ? mainWSrankGlobal : proxyWSrankGlobal;
+const embedData = model === "main" ? mainWSrankEmbed : proxyWSrankEmbed;
+const markers = [{ x: decay, label: "decay" }];
+---
+
+<LineChart
+    title="Weight stable rank, mean over hidden matrices"
+    caption="Stable rank of the hidden weight matrices, averaged across blocks, over training. The matrix-based optimizers (Muon family, SOAP) settle far higher than AdamW and Sophia."
+    series={build(globalData)}
+    x={x}
+    xTicks={xTicks}
+    xLabel="step"
+    yDomain={model === "main" ? [100, 700] : [0, 250]}
+    yTicks={
+        model === "main" ? [100, 300, 500, 700] : [0, 50, 100, 150, 200, 250]
+    }
+    yLabel="stable rank"
+    format={0}
+    markers={markers}
+/>
+
+<LineChart
+    title="Embedding (tied) stable rank"
+    caption="The tied embedding. SOAP lifts it far above the others; under the Muon family the embedding is updated by AdamW, so its rank tracks the pure-AdamW run."
+    series={build(embedData)}
+    x={x}
+    xTicks={xTicks}
+    xLabel="step"
+    yDomain={model === "main" ? [0, 65] : [0, 40]}
+    yTicks={model === "main" ? [0, 20, 40, 60] : [0, 10, 20, 30, 40]}
+    yLabel="stable rank"
+    format={1}
+    markers={markers}
+/>

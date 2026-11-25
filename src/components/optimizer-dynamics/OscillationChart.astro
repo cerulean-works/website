@@ -1,0 +1,89 @@
+---
+/**
+ * Gradient oscillation: cos between consecutive gradients. Left, the global
+ * value over training; right, the stable-phase mean per block. One series per
+ * optimizer. `model="main"` shows the 1B runs.
+ */
+import LineChart, { type LineSeries } from "../charts/LineChart.astro";
+import BarChart, { type BarRow } from "../charts/BarChart.astro";
+import type { ChartSeries } from "../charts/chart";
+import {
+    OPT_ORDER,
+    MAIN_ORDER,
+    OPT_COLOR,
+    OPT_SHAPE,
+    BLOCKS,
+    PROXY_DECAY_START,
+    MAIN_DECAY_START,
+    proxyX,
+    mainX,
+    proxyGradCosGlobal,
+    mainGradCosGlobal,
+    proxyGradCosByBlock,
+    mainGradCosByBlock,
+} from "./dynamics";
+
+interface Props {
+    model?: "proxy" | "main";
+}
+const { model = "proxy" } = Astro.props;
+
+const order = model === "main" ? MAIN_ORDER : OPT_ORDER;
+const x = model === "main" ? mainX : proxyX;
+const decay = model === "main" ? MAIN_DECAY_START : PROXY_DECAY_START;
+const xTicks =
+    model === "main"
+        ? [0, 500, 1000, 1500, 2000, 2500]
+        : [0, 2000, 4000, 6000, 8000, 10000];
+
+const lineData = model === "main" ? mainGradCosGlobal : proxyGradCosGlobal;
+const blockData = model === "main" ? mainGradCosByBlock : proxyGradCosByBlock;
+
+const lineSeries: LineSeries[] = order.map((opt) => ({
+    key: opt,
+    label: opt,
+    color: OPT_COLOR[opt],
+    shape: OPT_SHAPE[opt],
+    values: lineData[opt],
+}));
+
+const barSeries: ChartSeries[] = order.map((opt) => ({
+    key: opt,
+    label: opt,
+    color: OPT_COLOR[opt],
+    shape: OPT_SHAPE[opt],
+}));
+
+const barRows: BarRow[] = BLOCKS.map((block) => ({
+    label: block,
+    values: Object.fromEntries(
+        order.map((opt) => [opt, blockData[opt][block] ?? undefined])
+    ),
+}));
+---
+
+<LineChart
+    title="Gradient oscillation over training (global)"
+    caption="cos between the current gradient and the previous step's. Near 1 the directions repeat; near 0 they are orthogonal; near −1 they flip. The Muon family stays negative (bouncing between valley walls); SOAP and Sophia stay positive; AdamW hovers near 0. Every optimizer drifts upward during the decay."
+    series={lineSeries}
+    x={x}
+    xTicks={xTicks}
+    xLabel="step"
+    yDomain={model === "main" ? [-0.7, 0.4] : [-0.9, 0.7]}
+    yTicks={model === "main" ? [-0.6, -0.3, 0, 0.3] : [-0.8, -0.4, 0, 0.4]}
+    yLabel="cos(gₜ, gₜ₋₁)"
+    format={2}
+    markers={[{ x: decay, label: "decay" }]}
+/>
+
+<BarChart
+    title="Gradient oscillation per block (stable phase)"
+    caption="Stable-phase mean per block. The Muon family is most negative in the norm layer — even though the norm layer is updated by AdamW there — a sign the effect is set by the rest of the optimizer, not the block's own update rule."
+    series={barSeries}
+    rows={barRows}
+    domain={[-0.9, 0.5]}
+    ticks={[-0.8, -0.4, 0, 0.4]}
+    format={2}
+    axisLabel="cos(gₜ, gₜ₋₁)"
+    rowHeader="block"
+/>

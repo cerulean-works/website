@@ -5,6 +5,7 @@ import { formatPostDate } from "../lib/blog";
 import AuthorRows from "../components/AuthorRows.astro";
 import TableOfContents from "../components/TableOfContents.astro";
 import BaseLayout from "./BaseLayout.astro";
+import "katex/dist/katex.min.css";
 import "../styles/blog.css";
 
 type Props = CollectionEntry<"blog">["data"] & {

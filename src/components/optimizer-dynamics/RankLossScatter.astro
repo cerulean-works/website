@@ -1,0 +1,51 @@
+---
+/**
+ * Mean weight stable rank against final eval loss, one point per main-model run.
+ * Rank correlates with loss across optimizer families, but the within-family
+ * clusters barely move — the correlation is between families, not within.
+ */
+import ScatterPlot, {
+    type ScatterPanel,
+    type ScatterPoint,
+} from "../charts/ScatterPlot.astro";
+import type { ChartSeries } from "../charts/chart";
+import { OPT_COLOR, OPT_SHAPE, rankLossScatter } from "./dynamics";
+
+const order = ["NorMuon", "SOAP", "AdamW"] as const;
+
+const series: ChartSeries[] = order.map((opt) => ({
+    key: opt,
+    label: opt,
+    color: OPT_COLOR[opt],
+    shape: OPT_SHAPE[opt],
+}));
+
+const points: ScatterPoint[] = rankLossScatter.map((p) => ({
+    series: p.optimizer,
+    x: p.srank,
+    y: p.loss,
+    label: p.run,
+}));
+
+const panels: ScatterPanel[] = [
+    {
+        title: "Main model, all 1B-token runs",
+        points,
+        xDomain: [130, 340],
+        xTicks: [150, 200, 250, 300],
+        yDomain: [2.88, 3.24],
+        yTicks: [2.9, 3.0, 3.1, 3.2],
+    },
+];
+---
+
+<ScatterPlot
+    title="Weight stable rank vs. final loss"
+    caption="Each point is one run. Higher stable rank goes with lower final loss across the three optimizer families, but within a family the cluster is tight and flat — rank separates families, not runs within one."
+    series={series}
+    panels={panels}
+    xLabel="weight stable rank (stable phase)"
+    yLabel="final eval loss"
+    xFormat={0}
+    yFormat={3}
+/>

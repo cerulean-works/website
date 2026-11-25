@@ -1,0 +1,917 @@
+---
+title: "What can optimizer dynamics metrics tell us?"
+description: "Optimizer dynamics can distinguish optimizers, but mostly can't predict the runs within the same optimizer family, with one candidate exception."
+pubDate: "2026-10-25"
+updatedDate: "2026-11-15"
+author:
+    - author: "Hao-Cheng Yang"
+      url: "https://github.com/yukicoder0509"
+draft: true
+thumbnail:
+    src: "/images/blog_thumbnails/sky-dunes.webp"
+    alt: "A tall daylight sky with sweeping cirrus over sand dunes"
+---
+
+export const REPO_URL = "https://github.com/yukicoder0509/training-llama-3-2";
+
+import Sidenote from "../../components/Sidenote.astro";
+import FinalLossChart from "../../components/optimizer-dynamics/FinalLossChart.astro";
+import LossVsLrChart from "../../components/optimizer-dynamics/LossVsLrChart.astro";
+import WeightRankChart from "../../components/optimizer-dynamics/WeightRankChart.astro";
+import RankLossScatter from "../../components/optimizer-dynamics/RankLossScatter.astro";
+import OscillationChart from "../../components/optimizer-dynamics/OscillationChart.astro";
+import AlignmentChart from "../../components/optimizer-dynamics/AlignmentChart.astro";
+import OvershootChart from "../../components/optimizer-dynamics/OvershootChart.astro";
+
+Optimizer dynamics can distinguish optimizers, but mostly can't predict the runs within the same optimizer family, with one candidate exception.
+
+All training and logging code is on <a href={REPO_URL}>GitHub</a>.
+
+## Background
+
+In transformer model training, is it possible to retrieve information beyond the loss curve that sheds light on hyperparameter tuning and optimizer choice?
+
+To answer this question, we train a Llama 3.2-style model<Sidenote title="The Llama 3 Herd of Models" authors="Llama Team, Meta AI" venue="arXiv 2024" href="https://arxiv.org/abs/2407.21783" /> with 174M parameters and a Llama 3.2 1B model. We call the 174M model the "proxy model" and the 1B model the "main model". Models of different scales allow us to verify whether the findings on the proxy model transfer to the larger model. Statistical metrics on the gradient and update step are logged throughout training. We call them optimizer dynamics, which include vector length, angle difference, relative scale, etc.
+
+Throughout this article, we specifically investigate the following questions of interest:
+
+- Can optimizer dynamics predict the performance of optimizers?
+- Can we manipulate the metrics to affect loss?
+- Are there differences in optimizer dynamics between block types? Can we choose the most "suitable" optimizer for each block?
+
+## Can optimizer dynamics predict optimizer performance?
+
+### Final loss of different optimizers
+
+We first observe the final eval loss of each optimizer with tuned hyperparameters.
+
+<FinalLossChart />
+
+Matrix-based optimizers perform better than non-matrix ones. In the following sections, we explore the correlation between the final achievable loss and metric patterns across optimizers.
+
+The ranking holds on the main model, too.
+
+<FinalLossChart model="main" />
+
+**Caveat.** AdamW is weakly tuned in our experiment, and weight decay has almost no effect on it. Therefore, the ranking may be slightly biased, and AdamW could perform better given enough compute to tune it.
+
+### Metric: Rank
+
+The rank of a matrix is the maximum number of linearly independent rows or columns it contains. While rank measures the output dimension of the weight, it is sensitive to noise. Stable rank, on the other hand, is robust to noise. Stable rank is defined as the ratio of the sum of all squared singular values to the square of the maximum singular value. It roughly measures "how many directions are actually useful".
+
+We calculate the stable rank of each weight matrix, including the embedding, MLP, and attention matrices.
+
+<WeightRankChart />
+
+The rank follows a similar trend over training in all block types except the embedding. Our setting follows the common Muon setting that uses AdamW for non-matrix weights and the embedding. Therefore, the embedding's stable rank under the Muon optimizer is similar to that under AdamW.
+
+SOAP reaches the highest rank in the embedding and attention K, while the Muon family reaches the highest rank in the rest. On average, the rank order is Muon family = SOAP > AdamW > Sophia.
+
+Plotting the final eval loss directly against mean rank shows a clear negative correlation. However, the correlation holds only across optimizer families, not within each cluster, as our experiment that changes the rank directly (in a later section) shows.
+
+<RankLossScatter />
+
+The stable rank ranking and its correlation with final loss hold on the main model as well.
+
+<WeightRankChart model="main" />
+
+### Metric: Oscillation
+
+Next, we investigate how the gradient direction changes between steps by measuring the angle between gradients from consecutive steps.
+
+<OscillationChart />
+
+Different optimizers exhibit very different oscillation behavior. The values of SOAP and Sophia stay positive all the time. AdamW stays around 0, meaning that the gradients are mostly orthogonal between steps. The Muon family stays negative almost all the time. We interpret this as bouncing: in the river-valley view, Muon bounces between the hillsides.
+
+The river-valley picture comes from a recent study<Sidenote title="Understanding Warmup-Stable-Decay Learning Rates: A River Valley Loss Landscape Perspective" authors="Wen et al." venue="2024" href="https://arxiv.org/abs/2410.05192v3" />: the loss landscape resembles a valley with a river running along its floor, where some directions lower the loss and others raise it.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-4.png"
+        alt="A schematic loss landscape shaped like a valley with a river running along its floor"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>Adapted from Fig. 1 of arXiv:2606.21514.</figcaption>
+</figure>
+
+Two patterns stand out in the oscillation metric.
+
+First, in the left figure, the gradient angle of every optimizer moves to slightly above 0 during the decay phase, most clearly for Muon.
+
+Second, in the right figure, the average angle under the Muon family is most negative in the norm layer. This is counterintuitive: in the Muon setting, the norm layer is updated by AdamW, just as in the pure AdamW run, yet its value is positive under pure AdamW.
+
+The ranking of oscillation across optimizers holds on the main model, too.
+
+<OscillationChart model="main" />
+
+### Alignment
+
+To understand the relationship between the gradient and the update step, we look at the angle between them.
+
+<AlignmentChart />
+
+From the left figure, we observe that all optimizers rotate the update far away from the gradient direction. Moreover, each update is close to the previous one.
+
+These metrics show that the optimizers in our experiment perform heavy preconditioning on the gradient. Yet the level of alignment still differs between families.
+
+The alignment between the update and the gradient rises during the early phase, plateaus, and then rises again during the learning rate decay.
+
+The alignment ranking and the final rising behavior hold on the main model, too.
+
+<AlignmentChart model="main" />
+
+### Overshoot
+
+We want to investigate the overshoot behavior: does the optimizer step go past the minimum along its own direction?
+
+$$
+\text{overshoot} = \frac{\cos(\Delta W_{t-1},\, g_t)}{\cos(\Delta W_{t-1},\, -g_{t-1})}
+$$
+
+This compares the gradient along the step direction at the start and at the end of the step. If overshoot is positive, it typically means the step goes past the minimum along its own direction. On the other hand, the step stays on the slope toward the minimum when overshoot is negative.
+
+<OvershootChart />
+
+**Overshoot is positive in 59 of 59 measurements for every optimizer.** Every step goes past the minimum along its own direction, which is consistent with training near the edge of stability.
+
+Among all blocks, attn_v overshoots the most under every optimizer.
+
+SOAP has the lowest overshoot in every block.
+
+The overshoot ranking across optimizers and blocks mostly transfers to the main model.
+
+<OvershootChart model="main" />
+
+### Common metrics may include biases
+
+**The rise in sharpness during the decay is a measurement artifact.**
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/fig07_sharpness_bias.png"
+        alt="Left: directional sharpness during training, rising during decay; right: directional sharpness multiplied by the learning rate, with the rise removed"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        Left: directional sharpness during training. The bias grows as 1/LR
+        during the learning rate decay. Right: directional sharpness multiplied
+        by the learning rate, removing the 1/LR scale.
+    </figcaption>
+</figure>
+
+The sharpness is defined as follows<Sidenote title="MiniCPM: Unveiling the Potential of Small Language Models with Scalable Training Strategies" authors="Hu et al." venue="2024" href="https://arxiv.org/abs/2404.06395" />, as an approximate estimate of the second-order directional derivative (calculated for each batch):
+
+$$
+D_2 = \frac{(g_t - g_{t-1}) \cdot v_{t-1}}{\|v_{t-1}\|^2} \simeq \frac{v^\top H v}{\|v\|^2}, \quad \text{where } v = \Delta W,\ H = \text{Hessian}
+$$
+
+This measures the sharpness of the loss along the step direction. However, the estimate carries a bias from batch noise, which pushes it upward during the learning rate decay by up to about $1/\eta$. That is the reason for the rapid rise in the sharpness metric, **not that the surface gets sharper.**
+
+Therefore, we multiply D2 by the learning rate to remove the 1/LR trend.
+
+<details>
+<summary>Do the math</summary>
+
+Definition of D2:
+
+$$
+D_2 = \frac{(g_t - g_{t-1}) \cdot v_{t-1}}{\|v_{t-1}\|^2}
+$$
+
+Given that the batch gradient contains batch noise, we have:
+
+$$
+\begin{gathered}
+g = G + n, \quad n \sim \text{i.i.d.} \\
+\text{where } G \text{ is the true gradient, } n \text{ is the batch noise}
+\end{gathered}
+$$
+
+Assume an SGD update for simplicity:
+
+$$
+\text{SGD:} \quad v_{t-1} = -\eta\, g_{t-1} = -\eta\,(G_{t-1} + n_{t-1})
+$$
+
+Expand D2 as follows:
+
+$$
+\begin{aligned}
+D_2 &= \frac{(G_t + n_t - G_{t-1} - n_{t-1})\, v_{t-1}}{\|v_{t-1}\|^2} \\
+&= \frac{(G_t - G_{t-1})\, v_{t-1}}{\|v_{t-1}\|^2} + \frac{n_t\, v_{t-1}}{\|v_{t-1}\|^2} - \frac{n_{t-1}\, v_{t-1}}{\|v_{t-1}\|^2} \\[6pt]
+&\simeq \underbrace{\frac{v_{t-1}^\top H\, v_{t-1}}{\|v_{t-1}\|^2}}_{\text{true curvature}} + \frac{n_t\, v_{t-1}}{\|v_{t-1}\|^2} - \frac{n_{t-1}\, v_{t-1}}{\|v_{t-1}\|^2}
+\end{aligned}
+$$
+
+Notice that D2 contains not only curvature but also biases. Next, we explore the expected value of the bias.
+
+The first bias term. Noise at time t is independent of the past, so the expected value of noise is 0.
+
+$$
+\mathbb{E}\left[\frac{n_t\, v_{t-1}}{\|v_{t-1}\|^2}\right] = \mathbb{E}\left[n_t\right]\, \mathbb{E}\left[\frac{v_{t-1}}{\|v_{t-1}\|^2}\right] = 0
+$$
+
+The second bias term. Noise at time t-1 is not independent of the previous step. Expanding the term with the SGD update, we can see that the step also contains that noise.
+
+$$
+\begin{aligned}
+\mathbb{E}\left[\frac{n_{t-1}\, v_{t-1}}{\|v_{t-1}\|^2}\right] &= \mathbb{E}\left[\frac{-\eta\, n_{t-1}\,(G_{t-1}+n_{t-1})}{\eta^2\,\|G_{t-1}+n_{t-1}\|^2}\right] \\
+&= \frac{1}{-\eta}\, \mathbb{E}\left[\frac{n_{t-1}\,G_{t-1}+n_{t-1}^2}{\|G_{t-1}+n_{t-1}\|^2}\right] \\
+&= \frac{1}{-\eta}\, \mathbb{E}\left[\frac{n_{t-1}^2}{\|G_{t-1}+n_{t-1}\|^2}\right]
+\end{aligned}
+$$
+
+using that noise and the true gradient are independent, so $\mathbb{E}\left[n_{t-1}\, G_{t-1}\right] = \mathbb{E}\left[n_{t-1}\right]\mathbb{E}\left[G_{t-1}\right] = 0$.
+
+The second bias term biases the curvature estimate upward during the learning rate decay by up to about $1/\eta$:
+
+$$
+D_2 \simeq \underbrace{\frac{v_{t-1}^\top H\, v_{t-1}}{\|v_{t-1}\|^2}}_{\text{true curvature}} + \frac{1}{\eta}\, \mathbb{E}\left[\frac{n_{t-1}^2}{\|G_{t-1}+n_{t-1}\|^2}\right]
+$$
+
+</details>
+
+We further measure the noise by using a probe batch to calculate sharpness. A probe batch is a holdout batch that is not used in training. Therefore, probe sharpness is free of this bias.
+
+There is indeed a gap between the batch estimate and the probe sharpness, and it stays constant throughout the stable phase. The right figure shows that the bias doesn't simply scale as 1/LR. The noise itself is different across learning rates.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-9.png"
+        alt="Left: the measured sharpness and probe sharpness for Muon and NorMuon; right: the batch noise under different learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        Left: the measured sharpness and probe sharpness in Muon and NorMuon.
+        Right: the batch noise under different learning rates, calculated by
+        (noisy sharpness − probe sharpness) × LR = noise.
+    </figcaption>
+</figure>
+
+## Metrics under different learning rates
+
+For each optimizer, we train proxy models with different learning rates. The learning rate tuned by the sweep is treated as the baseline. At least 2 learning rates are lower than the baseline, and at least 2 are higher. None of the proxy runs diverged. For Muon and NorMuon, we keep the LR of the AdamW parameter groups fixed.
+
+We first explore possible indicators for the best learning rate band on the proxy model—specifically, metrics whose values follow a U-shape or an inverted U-shape across LRs, with the best learning rate band sitting at the top or bottom. We then run a learning rate sweep on the main model to test whether the indicators we found on the proxy model transfer.
+
+In short, most best-LR indicators found on the proxy are screening noise or simply track the LR value. The one that survives is probe sharpness for Muon: it peaks at about LR 0.01 on both models, around the best LR band.
+
+First, the loss itself across each sweep: every optimizer shows a clear best-LR band, with the final loss climbing on either side of it.
+
+<LossVsLrChart />
+
+### Proxy model
+
+#### NorMuon
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_metrics.png"
+        alt="NorMuon metrics across learning rates, with sharpness along the update direction peaking near the optimal learning rate"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+Sharpness along the update direction peaks near the optimal learning rate for NorMuon, and the same holds for Muon.
+
+In the early stage, the attention O overshoot is lowest at the best learning rate, while the other curves stay ordered by LR.
+
+<details>
+<summary>Other metrics that track the best LR (NorMuon)</summary>
+
+| Metric                        | 0.00125         | 0.0025          | 0.005 ★  | 0.01            | 0.02           | 0.03            | 0.04           |
+| ----------------------------- | --------------- | --------------- | -------- | --------------- | -------------- | --------------- | -------------- |
+| Final eval loss               | 3.050           | 3.001           | 2.981    | 2.986           | 3.001          | 3.014           | 3.028          |
+| Δloss vs best                 | +0.069          | +0.020          | 0        | +0.005          | +0.021         | +0.033          | +0.048         |
+| dir_sharpness (stable, MAX)   | 0.00255 (−28%)  | 0.00304 (−14%)  | 0.00356  | 0.00373 (+4.8%) | 0.0028 (−21%)  | 0.00179 (−50%)  | 0.00125 (−65%) |
+| probe_sharpness (stable, MAX) | 0.000402 (−50%) | 0.000549 (−32%) | 0.000809 | 0.00108 (+33%)  | 0.00105 (+30%) | 0.000716 (−11%) | 0.00054 (−33%) |
+| upd_erank_frac (early, MAX)   | 0.918 (−3.8%)   | 0.944 (−1.1%)   | 0.955    | 0.954 (−0.1%)   | 0.949 (−0.6%)  | 0.945 (−1.0%)   | 0.940 (−1.5%)  |
+| w_srank (early, MIN)          | 176 (+43%)      | 141 (+15%)      | 123      | 119 (−3.3%)     | 121 (−1.4%)    | 125 (+1.1%)     | 127 (+3.1%)    |
+| ov_n attn_o (early, MIN)      | 0.396 (+40%)    | 0.328 (+15%)    | 0.284    | 0.301 (+5.9%)   | 0.349 (+23%)   | 0.363 (+28%)    | 0.380 (+34%)   |
+| grad_norm attn_k (early, MAX) | 0.054 (+31%)    | 0.056 (+34%)    | 0.041    | 0.037 (−12%)    | 0.025 (−40%)   | 0.023 (−44%)    | 0.019 (−54%)   |
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_dir_sharpness_global.png"
+        alt="NorMuon global directional sharpness across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_grad_norm_attn_k.png"
+        alt="NorMuon gradient norm in attention K across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_ov_n_attn_o.png"
+        alt="NorMuon normalized overshoot in attention O across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_upd_erank_frac_global.png"
+        alt="NorMuon update effective-rank fraction across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_normuon_w_srank_global.png"
+        alt="NorMuon weight stable rank across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+</details>
+
+#### Muon
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_muon_metrics.png"
+        alt="Muon metrics across learning rates, with update-direction sharpness peaking at the best learning rate"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+As with NorMuon, the sharpness along the update direction peaks at the best LR. Sharpness works as a clean separator. The best-LR line sits on top throughout the whole stable phase, with both lower and higher LRs below it.
+
+Weight stable rank falls fastest and stays low at the best and higher LRs. The low LRs are still dropping well after step 2,000. The stable rank doesn't vary much when the LR is higher than the best LR. However, the value rises rapidly as the LR goes below the best.
+
+<details>
+<summary>Other metrics that track the best LR (Muon)</summary>
+
+| Metric                        | 0.00125         | 0.0025          | 0.005           | 0.01 ★  | 0.02           | 0.03            | 0.04            |
+| ----------------------------- | --------------- | --------------- | --------------- | ------- | -------------- | --------------- | --------------- |
+| Final eval loss               | 3.049           | 3.005           | 2.985           | 2.985   | 2.998          | 3.016           | 3.030           |
+| Δloss vs best                 | +0.064          | +0.020          | +0.000          | 0       | +0.014         | +0.031          | +0.045          |
+| dir_sharpness (stable, MAX)   | 0.00254 (−32%)  | 0.00304 (−19%)  | 0.00358 (−4.2%) | 0.00374 | 0.00269 (−28%) | 0.0018 (−52%)   | 0.00126 (−66%)  |
+| probe_sharpness (stable, MAX) | 0.000383 (−65%) | 0.000528 (−51%) | 0.000826 (−24%) | 0.00109 | 0.00095 (−13%) | 0.000726 (−33%) | 0.000545 (−50%) |
+| upd_erank_frac (early, MAX)   | 0.928 (−2.9%)   | 0.947 (−0.9%)   | 0.956 (+0.0%)   | 0.956   | 0.951 (−0.4%)  | 0.948 (−0.8%)   | 0.943 (−1.4%)   |
+| w_srank (early, MIN)          | 174 (+47%)      | 139 (+17%)      | 120 (+1.7%)     | 118     | 120 (+1.8%)    | 123 (+4.0%)     | 125 (+5.6%)     |
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_muon_dir_sharpness_global.png"
+        alt="Muon global directional sharpness across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_muon_upd_erank_frac_global.png"
+        alt="Muon update effective-rank fraction across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_muon_w_srank_global.png"
+        alt="Muon weight stable rank across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+</details>
+
+#### SOAP
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-10.png"
+        alt="SOAP metrics across learning rates, with gradient alignment rising through training and the best LR highest late in training"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+Alignment with the gradient rises through training, and the best LR stays highest from about step 4,000 onward.
+
+While the global sharpness along the update direction doesn't track the best LR as it does for NorMuon and Muon, a per-block one does. Directional sharpness in the norm layer ranks lowest at the best LR.
+
+<details>
+<summary>Other metrics that track the best LR (SOAP)</summary>
+
+| Metric                          | 0.00025          | 0.0005           | 0.001           | 0.002 ★  | 0.004           | 0.008          | 0.012          |
+| ------------------------------- | ---------------- | ---------------- | --------------- | -------- | --------------- | -------------- | -------------- |
+| Final eval loss                 | 3.065            | 3.010            | 2.981           | 2.978    | 2.985           | 3.009          | 3.033          |
+| Δloss vs best                   | +0.088           | +0.032           | +0.004          | 0        | +0.007          | +0.031         | +0.055         |
+| upd_grad_align (stable, MAX)    | 0.061 (−21%)     | 0.065 (−15%)     | 0.072 (−6.5%)   | 0.077    | 0.070 (−8.7%)   | 0.053 (−31%)   | 0.042 (−45%)   |
+| ov_n attn_o (stable, MIN)       | 0.113 (+13%)     | 0.108 (+8.2%)    | 0.105 (+5.0%)   | 0.100    | 0.125 (+26%)    | 0.170 (+71%)   | 0.217 (+118%)  |
+| dir_sharpness norm (early, MIN) | 0.279 (+159%)    | 0.183 (+69%)     | 0.142 (+31%)    | 0.108    | 0.124 (+14%)    | 0.137 (+27%)   | 0.142 (+31%)   |
+| D1 attn_k (decay, MIN)          | 0.000113 (+144%) | 9.32e-05 (+101%) | 8.39e-05 (+81%) | 4.65e-05 | 5.95e-05 (+28%) | 7.1e-05 (+53%) | 8.1e-05 (+74%) |
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_soap_D1_attn_k.png"
+        alt="SOAP D1 in attention K across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_soap_dir_sharpness_norm.png"
+        alt="SOAP directional sharpness in the norm layer across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_soap_overshoot_attn_o.png"
+        alt="SOAP overshoot in attention O across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_soap_upd_grad_align_global.png"
+        alt="SOAP update-gradient alignment across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+</details>
+
+#### AdamW
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-11.png"
+        alt="AdamW metrics across learning rates, with the early effective-rank fraction peaking at the best learning rate"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+For AdamW, the effective rank fraction in the early stage peaks at the best learning rate. The effective rank fraction is the effective rank divided by the maximum possible rank. It measures the information diversity of the update.
+
+The two metrics separate the clearly lower LRs but can't tell the best apart from the higher ones.
+
+<details>
+<summary>Other metrics that track the best LR (AdamW)</summary>
+
+| Metric                          | 0.00025       | 0.0005       | 0.001         | 0.001414      | 0.002 ★ | 0.002828      | 0.003         | 0.004         |
+| ------------------------------- | ------------- | ------------ | ------------- | ------------- | ------- | ------------- | ------------- | ------------- |
+| Final eval loss                 | 3.124         | 3.050        | 3.015         | 3.010         | 3.007   | 3.010         | 3.012         | 3.025         |
+| Δloss vs best                   | +0.117        | +0.043       | +0.008        | +0.003        | 0       | +0.002        | +0.005        | +0.018        |
+| upd_srank attn_o (stable, MAX)  | 21.8 (−25%)   | 24.5 (−16%)  | 27.5 (−5.6%)  | 28.7 (−1.3%)  | 29.1    | 28.9 (−0.8%)  | 28.7 (−1.7%)  | 27.5 (−5.6%)  |
+| upd_erank_frac (early, MAX)     | 0.205 (−44%)  | 0.293 (−20%) | 0.351 (−4.3%) | 0.365 (−0.6%) | 0.367   | 0.357 (−2.7%) | 0.362 (−1.3%) | 0.345 (−6.0%) |
+| D1/‖g‖ (stable, MIN)            | 0.036 (+109%) | 0.023 (+35%) | 0.019 (+10%)  | 0.018 (+4.0%) | 0.017   | 0.018 (+4.1%) | 0.018 (+5.3%) | 0.020 (+15%)  |
+| delta_erank attn_k (early, MAX) | 93.3 (−35%)   | 114 (−21%)   | 134 (−7.3%)   | 142 (−1.6%)   | 144     | 144 (−0.4%)   | 142 (−1.2%)   | 133 (−7.5%)   |
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_adamw_D1_over_gradnorm_global.png"
+        alt="AdamW D1 over gradient norm across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_adamw_delta_erank_attn_k.png"
+        alt="AdamW delta effective rank in attention K across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_adamw_upd_erank_frac_global.png"
+        alt="AdamW update effective-rank fraction across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_adamw_upd_srank_attn_o.png"
+        alt="AdamW update stable rank in attention O across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+</details>
+
+#### Sophia
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-12.png"
+        alt="Sophia metrics across learning rates, with the update effective-rank fraction separating the too-low learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+The update effective rank fraction behaves as it does for AdamW. It also separates the LRs that are too low, but not the higher ones.
+
+In the early window, per-neuron update imbalance roughly increases with learning rate; after roughly step 3,000, the ordering flips, and larger learning rates yield lower imbalance.
+
+<details>
+<summary>Other metrics that track the best LR (Sophia)</summary>
+
+| Metric                             | 5e-05        | 0.0001        | 0.0002        | 0.0002449 ★ | 0.0003        | 0.0003674     | 0.0004        | 0.00045       |
+| ---------------------------------- | ------------ | ------------- | ------------- | ----------- | ------------- | ------------- | ------------- | ------------- |
+| Final eval loss                    | 3.162        | 3.069         | 3.052         | 3.044       | 3.045         | 3.058         | 3.058         | 3.064         |
+| Δloss vs best                      | +0.118       | +0.025        | +0.008        | 0           | +0.001        | +0.014        | +0.014        | +0.020        |
+| upd_erank_frac attn_k (early, MAX) | 0.292 (−29%) | 0.358 (−13%)  | 0.409 (−1.1%) | 0.413       | 0.400 (−3.3%) | 0.364 (−12%)  | 0.362 (−12%)  | 0.338 (−18%)  |
+| upd_row_cv (early, MIN)            | 0.074 (+31%) | 0.066 (+16%)  | 0.059 (+3.8%) | 0.057       | 0.057 (+1.2%) | 0.065 (+15%)  | 0.066 (+16%)  | 0.078 (+38%)  |
+| upd_erank_frac (early, MAX)        | 0.324 (−19%) | 0.374 (−6.1%) | 0.394 (−0.9%) | 0.398       | 0.392 (−1.4%) | 0.387 (−2.6%) | 0.389 (−2.2%) | 0.368 (−7.5%) |
+| upd_srank mlp_gate (decay, MAX)    | 27.6 (−49%)  | 44.9 (−17%)   | 46.4 (−14%)   | 54.1        | 53.2 (−1.8%)  | 52.3 (−3.3%)  | 49.1 (−9.3%)  | 47.1 (−13%)   |
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_sophia_upd_erank_frac_attn_k.png"
+        alt="Sophia update effective-rank fraction in attention K across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_sophia_upd_erank_frac_global.png"
+        alt="Sophia global update effective-rank fraction across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_sophia_upd_srank_mlp_gate.png"
+        alt="Sophia update stable rank in the MLP gate across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/lr_sophia_update_imbalance_global.png"
+        alt="Sophia per-neuron update imbalance across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+</details>
+
+#### Is the sharpness peak in Muon and NorMuon real?
+
+This is a natural concern, since the usual sharpness estimator is inflated by batch noise. Measuring the directional sharpness on a fixed probe batch removes this noise and lets us test whether the sharpness indicator is pure noise or carries information.
+
+With the probe batch, the sharpness still peaks at the same learning rate. The peak sits on the best learning rate for Muon and one step off for NorMuon.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/probe_sharpness_normuon.png"
+        alt="Probe directional sharpness on NorMuon across learning rates, peaking near the best learning rate"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>Probe directional sharpness on NorMuon.</figcaption>
+</figure>
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/probe_sharpness_muon.png"
+        alt="Probe directional sharpness on Muon across learning rates, peaking at the best learning rate"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>Probe directional sharpness on Muon.</figcaption>
+</figure>
+
+Why does the sharpness peak appear? Global probe sharpness equals each block's sharpness weighted by that block's share of the update. In the Muon and NorMuon sweeps, the LR of the AdamW blocks is fixed. The embedding (AdamW at a fixed LR) dominates the update at low Muon LR. The global peak is the point where the matrix updates take over. The peak may simply reflect the balance between the embedding LR and the Muon LR. Alternatively, this balance may be exactly why the best LR performs best. Our current experiments can't tell these two explanations apart.
+
+The figure below breaks the global sharpness down into the contribution of each block type.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-13.png"
+        alt="Stacked bars of each block type's contribution to global probe sharpness across learning rates, with the embedding's share of the update overlaid as a line and the sharpness peak marked"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        Each bar stacks four groups (attention in blue, MLP in green, embedding
+        in yellow, norm gains in gray). Each group's height is its share of the
+        update size times its own sharpness. The stacks roughly add up to the
+        global probe sharpness, matching it within about 3%. The orange line is
+        the embedding's share of the update (right axis). The black ★ marks the
+        sharpness peak, and the best-LR label is in orange on the x-axis.
+    </figcaption>
+</figure>
+
+In the figure, we can see that nearly all of the peak comes from the attention and MLP contributions, which rise and then fall. The embedding itself contributes little. The peak lands where the embedding's share drops from about 90% toward 40%.
+
+### Main model
+
+We train the main model at different LRs on 1B tokens.
+
+Most of the proxy-selected indicators don't transfer cleanly to the main model. Several become monotonic in LR. This suggests they measure the LR itself rather than how close it is to the optimum. SOAP's norm-layer sharpness and AdamW's update effective-rank fraction still rise or fall away from the best LR on the low side, but neither separates the best LR from higher ones. Given how many candidates we screened on a single seed, part of the proxy signal is likely selection noise.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-14.png"
+        alt="Indicator values across learning rates, with gray dashed lines for the proxy model and colored lines for the main model, and titles colored by whether the indicator transfers"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The indicator values across learning rates. Gray dashed lines show the
+        proxy model and colored lines the main model. Stars mark the learning
+        rate with the lowest loss. Titles in red mark metrics that do not
+        transfer to the main model; green marks metrics that transfer, though
+        more weakly; yellow marks metrics whose extremum lands near, but not
+        exactly on, the best learning rate.
+    </figcaption>
+</figure>
+
+The noisy sharpness indicator looks rejected on the main model, but probe sharpness peaks at 0.01 — on the best LR for Muon, and one step below it for NorMuon. **Probe sharpness could serve as an indicator of the best LR band.**
+
+Caveat: Muon's best LR doesn't move between scales in our experiment; it is 0.01 on both models. So "the sharpness peak transfers" can't yet be distinguished from "the sharpness peak always sits near 0.01".
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/main_probe_sharpness_normuon.png"
+        alt="Probe directional sharpness on NorMuon on the main model across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/main_probe_sharpness_muon.png"
+        alt="Probe directional sharpness on Muon on the main model across learning rates"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+The detailed values of each metric are shown below.
+
+<details>
+<summary>NorMuon</summary>
+
+| Metric (proxy → main)               | 0.0025          | 0.005           | 0.01 ≈          | 0.02 ★   | 0.04            |
+| ----------------------------------- | --------------- | --------------- | --------------- | -------- | --------------- |
+| Final eval loss                     | 3.0397          | 2.9608          | 2.9486          | 2.9439   | 3.0641          |
+| Δloss vs best                       | +0.096          | +0.017          | +0.005          | 0        | +0.120          |
+| dir_sharpness (stable, MAX) ✗ → ✗   | 0.00234 (+86%)  | 0.00268 (+113%) | 0.00232 (+85%)  | 0.00126  | 0.000595 (−53%) |
+| probe_sharpness (stable, MAX) ✗ → ≈ | 0.000132 (−15%) | 0.000168 (+8%)  | 0.000196 (+27%) | 0.000155 | 0.000129 (−17%) |
+| upd_erank_frac (early, MAX) ✓ → ✓   | 0.867 (−7%)     | 0.9 (−4%)       | 0.922 (−1%)     | 0.933    | 0.932 (−0%)     |
+| w_srank (early, MIN) ✗ → ✗          | 608 (+33%)      | 598 (+30%)      | 523 (+14%)      | 458      | 436 (−5%)       |
+| overshoot attn_o (early, MIN) ✓ → ✗ | 0.0598 (−50%)   | 0.0965 (−20%)   | 0.125 (+4%)     | 0.12     | 0.117 (−3%)     |
+| grad_norm attn_k (early, MAX) ✗ → ✗ | 0.0905 (+74%)   | 0.0839 (+62%)   | 0.0735 (+41%)   | 0.052    | 0.0506 (−3%)    |
+
+</details>
+
+<details>
+<summary>Muon</summary>
+
+| Metric (proxy → main)               | 0.0025          | 0.005           | 0.01 ★   | 0.02           | 0.04            |
+| ----------------------------------- | --------------- | --------------- | -------- | -------------- | --------------- |
+| Final eval loss                     | 3.0285          | 2.9616          | 2.9419   | 2.9644         | 3.1124          |
+| Δloss vs best                       | +0.087          | +0.020          | 0        | +0.022         | +0.170          |
+| dir_sharpness (stable, MAX) ✓ → ✗   | 0.00235 (+4%)   | 0.00268 (+18%)  | 0.00227  | 0.0012 (−47%)  | 0.000666 (−71%) |
+| probe_sharpness (stable, MAX) ✓ → ✓ | 0.000143 (−25%) | 0.000169 (−11%) | 0.000191 | 0.000173 (−9%) | 0.000143 (−25%) |
+| upd_erank_frac (early, MAX) ≈ → ✗   | 0.883 (−5%)     | 0.905 (−2%)     | 0.927    | 0.941 (+2%)    | 0.938 (+1%)     |
+| w_srank (early, MIN) ✓ → ✗          | 608 (+20%)      | 594 (+18%)      | 505      | 429 (−15%)     | 406 (−20%)      |
+
+</details>
+
+<details>
+<summary>SOAP</summary>
+
+| Metric (proxy → main)                 | 0.00075         | 0.0015 ≈        | 0.003 ★  | 0.006           | 0.012           |
+| ------------------------------------- | --------------- | --------------- | -------- | --------------- | --------------- |
+| Final eval loss                       | 2.9925          | 2.9584          | 2.9545   | 3.0138          | 3.4856          |
+| Δloss vs best                         | +0.038          | +0.004          | 0        | +0.059          | +0.531          |
+| upd_grad_align (stable, MAX) ✓ → ✗    | 0.0757 (+18%)   | 0.0661 (+3%)    | 0.064    | 0.056 (−13%)    | 0.051 (−20%)    |
+| overshoot attn_o (stable, MIN) ✓ → ✗  | 0.0473 (−24%)   | 0.0559 (−10%)   | 0.0623   | 0.0781 (+25%)   | 0.038 (−39%)    |
+| dir_sharpness norm (early, MIN) ✓ → ✓ | 0.0533 (+340%)  | 0.0217 (+79%)   | 0.0121   | 0.0126 (+4%)    | 0.0217 (+79%)   |
+| D1 attn_k (decay, MIN) ✓ → ✗          | 1.43e−05 (−23%) | 2.84e−05 (+52%) | 1.87e−05 | 1.31e−05 (−30%) | 3.34e−05 (+79%) |
+
+</details>
+
+<details>
+<summary>AdamW</summary>
+
+| Metric (proxy → main)                 | 0.00025       | 0.0003        | 0.000354      | 0.0005        | 0.000707 ★ | 0.001        | 0.00141      | 0.002 (diverged) |
+| ------------------------------------- | ------------- | ------------- | ------------- | ------------- | ---------- | ------------ | ------------ | ---------------- |
+| Final eval loss                       | 3.2265        | 3.1886        | 3.1552        | 3.1281        | 3.1007     | 3.1509       | 3.3070       | 4.5790           |
+| Δloss vs best                         | +0.126        | +0.088        | +0.054        | +0.027        | 0          | +0.050       | +0.206       | +1.478           |
+| upd_srank attn_o (stable, MAX) ✓ → ✗  | 18.9 (+4%)    | 18.3 (+1%)    | 19.6 (+8%)    | 17.7 (−3%)    | 18.2       | 15.4 (−16%)  | 16.1 (−12%)  | 11.5 (−37%)      |
+| upd_erank_frac (early, MAX) ✓ → ✓     | 0.0828 (−2%)  | 0.084 (−0%)   | 0.0788 (−7%)  | 0.0755 (−11%) | 0.0844     | 0.0802 (−5%) | 0.07 (−17%)  | 0.0627 (−26%)    |
+| D1/‖g‖ (stable, MIN) ✓ → ✗            | 0.0243 (+64%) | 0.0217 (+46%) | 0.0184 (+24%) | 0.0163 (+10%) | 0.0149     | 0.0137 (−8%) | 0.0137 (−8%) | 0.00131 (−91%)   |
+| delta_erank attn_k (early, MAX) ✓ → ✗ | 98.1 (+5%)    | 103 (+10%)    | 96 (+3%)      | 90.9 (−3%)    | 93.3       | 87.5 (−6%)   | 74.4 (−20%)  | 67.7 (−27%)      |
+
+</details>
+
+<details>
+<summary>Sophia</summary>
+
+| Metric (proxy → main)                                        | 3.54e-05      | 5e-05         | 7.07e-05 ★ | 0.0001        | 0.000141       |
+| ------------------------------------------------------------ | ------------- | ------------- | ---------- | ------------- | -------------- |
+| Final eval loss                                              | 3.3195        | 3.2637        | 3.2490     | 3.3093        | 3.4237         |
+| Δloss vs best                                                | +0.071        | +0.015        | 0          | +0.060        | +0.175         |
+| upd_erank_frac attn_k (early, MAX) ✓ → ✗                     | 0.204 (+0%)   | 0.193 (−5%)   | 0.204      | 0.2 (−2%)     | 0.207 (+2%)    |
+| per-neuron update imbalance (row-norm CV) (early, MIN) ✓ → ✗ | 0.0182 (−30%) | 0.0225 (−14%) | 0.0261     | 0.0406 (+56%) | 0.0531 (+104%) |
+| upd_erank_frac (early, MAX) ✓ → ✗                            | 0.152 (+4%)   | 0.14 (−4%)    | 0.146      | 0.132 (−10%)  | 0.129 (−11%)   |
+| upd_srank mlp_gate (decay, MAX) ✓ → ✗                        | 35.5 (−13%)   | 38 (−7%)      | 41         | 43.5 (+6%)    | 37.2 (−9%)     |
+
+</details>
+
+## Can we manipulate the metrics to affect loss?
+
+Based on the above analysis, there are indeed different metric patterns between optimizers.
+
+We then ask: if we somehow manipulate these metrics, will the final loss be affected?
+
+We take NorMuon as the baseline since it is our best setting. We create several variants to manipulate the metrics. These variants are trained on the proxy model with 1B tokens.
+
+<aside class="callout">
+<p class="callout-title">ℹ️ Seed noise</p>
+
+Throughout our experiment on the proxy model, the seed-to-seed difference in final loss is about 0.001–0.004. We consider loss changes under 0.004 to be noise.
+
+The seed-to-seed noise on the main model is up to 0.016.
+
+</aside>
+
+### SOAP for embedding
+
+Rank correlates with final loss across optimizer families. We then try to choose the optimizer for each block so that it reaches the highest rank possible.
+
+The setup: Muon for matrix weights, AdamW for non-matrix weights, SOAP for embedding.
+
+Result: We do change the rank of the embedding, while the other blocks keep about the same rank as the baseline.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/embed_srank_soapembed.png"
+        alt="The stable rank during training under the SOAP embedding variant and the baseline"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The stable rank during training under the SOAP embedding variant and the
+        baseline.
+    </figcaption>
+</figure>
+
+But the final loss barely changes: 3.23933 for the baseline vs. 3.23997 for the variant.
+
+### Split QKV orthogonalization
+
+In the overshoot metrics, V and K in attention overshoot the most. Muon orthogonalizes each weight matrix as a whole. But q_proj, k_proj, and v_proj are really stacks of independent attention heads: 12 query heads and 4 shared key/value heads. Therefore, we orthogonalize Q, K, and V per attention head instead of as whole matrices. This method is called MuonSplit.<Sidenote title="When and Why Grouping Attention Heads Accelerates Muon Optimization" authors="Zhang et al." venue="2026" href="https://arxiv.org/abs/2605.08933v1" />
+
+Splitting the heads lowers the overshoot, meaning that the step becomes more precise and the model lands closer to the minimum along its direction.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-15.png"
+        alt="The average overshoot during training and the difference between the baseline and the split-QKV variant"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The average overshoot during training and the difference between the
+        baseline and the variant.
+    </figcaption>
+</figure>
+
+Beyond overshoot, this significantly changes the pattern of alignment. The global alignment reaches a stable level much faster than the baseline. The alignment between the gradient direction and the update direction of attention heads is much higher than the baseline, too.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/align_splitqkv.png"
+        alt="The update-gradient alignment during training for the split-QKV variant and the baseline"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The update-gradient alignment during training. The angle between update
+        direction and negative gradient. A value close to 0 means the angle is
+        close to a right angle. The higher the value, the more the update
+        direction resembles the gradient direction.
+    </figcaption>
+</figure>
+
+The stable rank of attention heads is also changed.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/attn_srank_splitqkv.png"
+        alt="The stable rank of attention Q, K, V, and the projection matrix during training steps"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The stable rank of attention Q, K, V, and projection matrix during
+        training steps.
+    </figcaption>
+</figure>
+
+Despite these changes in metrics, the final eval loss is 3.2339 / 3.240 (two seeds). This makes no meaningful difference compared with the baseline 3.23933.
+
+### Same variant on the main model
+
+We also tested the above two variants on the main model with 3B tokens. The rank and alignment change in a similar way. The difference in loss is also within seed-to-seed noise (SOAP embedding 2.7112 / 2.7086, Split QKV 2.7037 / 2.7047 against the baseline 2.7064).
+
+For both variants, the changes in rank and alignment, as well as the (lack of) change in final loss, carry over from the proxy model to the main model. This suggests that the proxy can be used to screen interventions before spending compute on the main model. Not every metric transfers, however: overshoot moves in opposite directions on the two models, as shown below.
+
+In the split QKV orthogonalization experiment, the head overshoot moves in opposite directions on the proxy and main models: on the main model, the variant increases the overshoot of every head.
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-16.png"
+        alt="On the main model, the split-QKV variant increases the overshoot of every attention head relative to the baseline"
+        loading="lazy"
+        decoding="async"
+    />
+</figure>
+
+The other metrics of the two variants on the main model confirm the proxy picture.
+
+**SOAP for embedding**
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-17.png"
+        alt="On the main model, the embedding stable rank increases under the SOAP embedding variant as expected"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The stable rank increases as expected, since the embedding uses a
+        different optimizer.
+    </figcaption>
+</figure>
+
+**Split QKV orthogonalization**
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-18.png"
+        alt="On the main model, the split-QKV variant's alignment rises faster and keeps an early-stage gap, though the lines separate less than on the proxy model"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The two lines don't separate as far as on the proxy model, but the
+        variant still rises faster and keeps the gap in the early stage.
+    </figcaption>
+</figure>
+
+<figure>
+    <img
+        src="/images/blog/optimizer-dynamics/image-19.png"
+        alt="On the main model, the ranking of stable rank by head type matches the proxy model, with the variant higher than the baseline except for the attention output projection"
+        loading="lazy"
+        decoding="async"
+    />
+    <figcaption>
+        The ranking of stable rank in each head type is the same as on the proxy
+        model. The variant is higher than the baseline except for the attention
+        output projection.
+    </figcaption>
+</figure>
+
+## Key findings
+
+- Optimizer families show distinct patterns in rank, oscillation, alignment and overshoot, and these rankings are the same at both the 174M and 1B scales.
+- Directly manipulating the metrics doesn't change the final loss within optimizer families.
+- Both interventions had the same (null) effect on loss at both scales, and their effect on rank and alignment also carried over.
+- All optimizers overshoot their steps through the minimum along the step direction in 59 of 59 measurements.
+- Most best-LR-band indicators don't transfer from the proxy model to the main model. Probe sharpness does transfer for Muon. However, since the best LR stays at 0.01 on both models, we can't yet tell whether the peak tracks the best LR or simply stays at 0.01.
+- Common estimators can be biased by measurement bias. In our case, the sharp rise in sharpness along the update direction during the LR decay phase comes from an estimator bias that scales as 1/LR.
+
+## Limitations
+
+- The learning rate sweep experiment uses one seed per configuration. Small differences in metrics may come from seed noise. More seeds are needed to verify whether the relationship between LR and dynamics metrics exists.
+- Probe-batch measurements were only run for Muon and NorMuon in the learning rate sweep.
+- The data-to-model size ratio differs between the proxy model (174M model trained on 1B or 6B tokens) and main model (1B model trained on 1B or 3B tokens). This is unlike common practice, where model and data scale together.
+- AdamW is weakly tuned: only its LR was swept, and other hyperparameters were tuned on the proxy and reused.

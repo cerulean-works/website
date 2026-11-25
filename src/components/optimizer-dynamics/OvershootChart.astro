@@ -1,0 +1,53 @@
+---
+/**
+ * Overshoot per block, stable-phase median: cos(ΔW, gₜ) / cos(ΔW, −gₜ₋₁).
+ * Positive means the step passes the minimum along its own direction. One
+ * series per optimizer, computed from the same runs as the other dynamics
+ * figures. `model="main"` shows the 1B runs (NorMuon, SOAP, AdamW).
+ */
+import BarChart, { type BarRow } from "../charts/BarChart.astro";
+import type { ChartSeries } from "../charts/chart";
+import {
+    OPT_ORDER,
+    MAIN_ORDER,
+    OPT_COLOR,
+    OPT_SHAPE,
+    OVERSHOOT_BLOCKS,
+    proxyOvershoot,
+    mainOvershoot,
+} from "./dynamics";
+
+interface Props {
+    model?: "proxy" | "main";
+}
+const { model = "proxy" } = Astro.props;
+
+const order = model === "main" ? MAIN_ORDER : OPT_ORDER;
+const data = model === "main" ? mainOvershoot : proxyOvershoot;
+
+const series: ChartSeries[] = order.map((opt) => ({
+    key: opt,
+    label: opt,
+    color: OPT_COLOR[opt],
+    shape: OPT_SHAPE[opt],
+}));
+
+const rows: BarRow[] = OVERSHOOT_BLOCKS.map((block) => ({
+    label: block,
+    values: Object.fromEntries(
+        order.map((opt) => [opt, data[opt][block] ?? undefined])
+    ),
+}));
+---
+
+<BarChart
+    title="Overshoot per block (stable-phase median)"
+    caption="cos(ΔW, gₜ) / cos(ΔW, −gₜ₋₁): positive means the step passes the minimum along its own direction. It is positive everywhere, for every optimizer. Attention V overshoots the most in each; SOAP overshoots the least in every block."
+    series={series}
+    rows={rows}
+    domain={[0, 0.45]}
+    ticks={[0, 0.1, 0.2, 0.3, 0.4]}
+    format={3}
+    axisLabel="overshoot"
+    rowHeader="block"
+/>
