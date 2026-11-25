@@ -1,0 +1,78 @@
+---
+/**
+ * Alignment of the update step: left, cos(ΔW, −g) — how much the update keeps of
+ * the gradient direction; right, cos(ΔW_t, ΔW_{t-1}) — how much consecutive
+ * updates repeat. One line per optimizer. `model="main"` shows the 1B runs.
+ */
+import LineChart, { type LineSeries } from "../charts/LineChart.astro";
+import {
+    OPT_ORDER,
+    MAIN_ORDER,
+    OPT_COLOR,
+    OPT_SHAPE,
+    PROXY_DECAY_START,
+    MAIN_DECAY_START,
+    proxyX,
+    mainX,
+    proxyUpdAlignGlobal,
+    mainUpdAlignGlobal,
+    proxyUpdCosGlobal,
+    mainUpdCosGlobal,
+    type Optimizer,
+} from "./dynamics";
+
+interface Props {
+    model?: "proxy" | "main";
+}
+const { model = "proxy" } = Astro.props;
+
+const order = model === "main" ? MAIN_ORDER : OPT_ORDER;
+const x = model === "main" ? mainX : proxyX;
+const decay = model === "main" ? MAIN_DECAY_START : PROXY_DECAY_START;
+const xTicks =
+    model === "main"
+        ? [0, 500, 1000, 1500, 2000, 2500]
+        : [0, 2000, 4000, 6000, 8000, 10000];
+
+function build(data: Record<Optimizer, (number | null)[]>): LineSeries[] {
+    return order.map((opt) => ({
+        key: opt,
+        label: opt,
+        color: OPT_COLOR[opt],
+        shape: OPT_SHAPE[opt],
+        values: data[opt],
+    }));
+}
+
+const alignData = model === "main" ? mainUpdAlignGlobal : proxyUpdAlignGlobal;
+const cosData = model === "main" ? mainUpdCosGlobal : proxyUpdCosGlobal;
+const markers = [{ x: decay, label: "decay" }];
+---
+
+<LineChart
+    title="Update vs. negative gradient: cos(ΔW, −g)"
+    caption="How much of the raw gradient direction survives the update. All optimizers rotate far off the gradient (values well below 1), AdamW least so. Alignment rises through the early phase and again during the decay."
+    series={build(alignData)}
+    x={x}
+    xTicks={xTicks}
+    xLabel="step"
+    yDomain={[0, 0.28]}
+    yTicks={[0, 0.05, 0.1, 0.15, 0.2, 0.25]}
+    yLabel="cos(ΔW, −g)"
+    format={3}
+    markers={markers}
+/>
+
+<LineChart
+    title="Consecutive updates: cos(ΔWₜ, ΔWₜ₋₁)"
+    caption="How much each update repeats the previous one. Every optimizer keeps consecutive updates very similar (values near 1); SOAP highest, the Muon family lowest."
+    series={build(cosData)}
+    x={x}
+    xTicks={xTicks}
+    xLabel="step"
+    yDomain={[0.8, 0.99]}
+    yTicks={[0.82, 0.86, 0.9, 0.94, 0.98]}
+    yLabel="cos(ΔWₜ, ΔWₜ₋₁)"
+    format={3}
+    markers={markers}
+/>
